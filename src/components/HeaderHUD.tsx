@@ -3,15 +3,16 @@ import { GameState } from '../types/game';
 import { formatJoules, formatRate, formatSeconds } from '../utils/formatters';
 import { calculateJPS } from '../utils/gameCalculations';
 import { EVOLUTION_PHASES } from '../data/gameConstants';
-import { Volume2, VolumeX, RotateCcw, Zap, TrendingUp, Clock, Award, ChevronRight } from 'lucide-react';
+import { Volume2, VolumeX, RotateCcw, Zap, TrendingUp, Clock, Award, ChevronRight, BookOpen, Settings, Menu } from 'lucide-react';
 
 interface HeaderHUDProps {
   gameState: GameState;
   onToggleMute: () => void;
   onReset: () => void;
+  onOpenMenu: (tab?: 'overview' | 'manual' | 'settings' | 'credits') => void;
 }
 
-export const HeaderHUD: React.FC<HeaderHUDProps> = ({ gameState, onToggleMute, onReset }) => {
+export const HeaderHUD: React.FC<HeaderHUDProps> = ({ gameState, onToggleMute, onReset, onOpenMenu }) => {
   const currentPhaseInfo = EVOLUTION_PHASES[gameState.currentPhase - 1];
   const nextPhaseInfo = EVOLUTION_PHASES[gameState.currentPhase] || null;
   const currentJPS = calculateJPS(gameState.upgrades, gameState.isOverdrive);
@@ -34,13 +35,17 @@ export const HeaderHUD: React.FC<HeaderHUDProps> = ({ gameState, onToggleMute, o
       {/* Main Header Row */}
       <div className="w-full flex items-center justify-between px-4 py-2 gap-2" style={{ background: 'rgba(3,7,18,0.95)', backdropFilter: 'blur(20px)' }}>
 
-        {/* Logo */}
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <div className="relative w-9 h-9 rounded-lg flex items-center justify-center border" style={{ borderColor: `${currentPhaseInfo.accentHex}60`, background: `${currentPhaseInfo.accentHex}15`, boxShadow: `0 0 14px ${currentPhaseInfo.accentHex}40` }}>
+        {/* Logo (Clickable to open Main Menu) */}
+        <div
+          onClick={() => onOpenMenu('overview')}
+          className="flex items-center gap-3 flex-shrink-0 cursor-pointer group hover:opacity-95 transition-all"
+          title="Nhấp để mở Menu Trạm"
+        >
+          <div className="relative w-9 h-9 rounded-lg flex items-center justify-center border group-hover:scale-105 transition-transform" style={{ borderColor: `${currentPhaseInfo.accentHex}60`, background: `${currentPhaseInfo.accentHex}15`, boxShadow: `0 0 14px ${currentPhaseInfo.accentHex}40` }}>
             <Zap className="w-5 h-5 animate-pulse" style={{ color: currentPhaseInfo.accentHex }} />
           </div>
           <div>
-            <h1 className="font-orbitron font-black text-sm tracking-[0.15em] text-slate-50 leading-none">
+            <h1 className="font-orbitron font-black text-sm tracking-[0.15em] text-slate-50 leading-none group-hover:text-cyan-300 transition-colors">
               NEON REACTOR
             </h1>
             <p className="text-[10px] tracking-widest uppercase font-mono mt-0.5" style={{ color: currentPhaseInfo.accentHex }}>
@@ -51,7 +56,7 @@ export const HeaderHUD: React.FC<HeaderHUDProps> = ({ gameState, onToggleMute, o
 
         {/* Center: Live Energy Metrics */}
         <div className="flex items-stretch gap-0 rounded-xl overflow-hidden border border-slate-800 bg-black/60">
-          {/* Joules (hoặc Nợ Âm) */}
+          {/* Joules (hoặc NỢ ÂM) */}
           <div className="flex flex-col items-center px-5 py-2 border-r border-slate-800" style={gameState.joules < 0 ? { background: 'rgba(255,42,95,0.15)' } : {}}>
             <span className="text-[9px] uppercase tracking-widest font-mono flex items-center gap-1 mb-0.5" style={{ color: gameState.joules < 0 ? '#ff2a5f' : '#94a3b8' }}>
               <Zap className="w-2.5 h-2.5" style={{ color: gameState.joules < 0 ? '#ff2a5f' : currentPhaseInfo.accentHex }} />
@@ -102,7 +107,7 @@ export const HeaderHUD: React.FC<HeaderHUDProps> = ({ gameState, onToggleMute, o
           </div>
         </div>
 
-        {/* Right: Timer + Phase + Controls */}
+        {/* Right: Controls + Menu Buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Phase indicator with glow */}
           <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold font-orbitron" style={{ borderColor: `${currentPhaseInfo.accentHex}50`, backgroundColor: `${currentPhaseInfo.accentHex}12`, color: currentPhaseInfo.accentHex }}>
@@ -116,12 +121,39 @@ export const HeaderHUD: React.FC<HeaderHUDProps> = ({ gameState, onToggleMute, o
             <span className="font-mono font-bold text-xs">{formatSeconds(gameState.speedrunSeconds)}</span>
           </div>
 
-          {/* Sound + Reset */}
+          {/* ── MENU BUTTONS ── */}
+          <button
+            onClick={() => onOpenMenu('manual')}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-900/60 text-cyan-300 transition-all text-xs font-mono font-bold cursor-pointer"
+            title="Xem Sổ Tay Hướng Dẫn"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span className="hidden lg:inline">HƯỚNG DẪN</span>
+          </button>
+
+          <button
+            onClick={() => onOpenMenu('settings')}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-amber-400/50 bg-amber-400/10 hover:bg-amber-400/20 text-amber-300 transition-all text-xs font-orbitron font-bold cursor-pointer shadow-[0_0_12px_rgba(255,183,3,0.25)]"
+            title="Mở Cài Đặt Hệ Thống [ESC]"
+          >
+            <Settings className="w-3.5 h-3.5 animate-spin-slow" />
+            <span>MENU</span>
+          </button>
+
+          {/* Mute + Reset quick buttons */}
           <div className="flex items-center gap-1">
-            <button onClick={onToggleMute} className="p-2 rounded-lg border border-slate-800 bg-black/40 hover:border-slate-600 transition-colors">
+            <button
+              onClick={onToggleMute}
+              className="p-2 rounded-lg border border-slate-800 bg-black/40 hover:border-slate-600 transition-colors cursor-pointer"
+              title="Bật/Tắt Âm Thanh"
+            >
               {gameState.isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-slate-400" />}
             </button>
-            <button onClick={onReset} className="p-2 rounded-lg border border-slate-800 bg-black/40 hover:border-red-500/50 transition-colors">
+            <button
+              onClick={onReset}
+              className="p-2 rounded-lg border border-slate-800 bg-black/40 hover:border-red-500/50 transition-colors cursor-pointer"
+              title="Đặt Lại Trạm"
+            >
               <RotateCcw className="w-4 h-4 text-slate-500 hover:text-red-400" />
             </button>
           </div>

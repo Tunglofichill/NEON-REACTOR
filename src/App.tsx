@@ -5,11 +5,38 @@ import { ReactorView } from './components/ReactorView';
 import { UpgradePanel } from './components/UpgradePanel';
 import { NotificationTicker } from './components/NotificationTicker';
 import { VictoryModal } from './components/VictoryModal';
+import { MainMenuModal } from './components/MainMenuModal';
 import { ParticleCanvas, ParticleCanvasHandle } from './engine/renderers/ParticleCanvas';
 import { EVOLUTION_PHASES, UPGRADE_CONFIGS } from './data/gameConstants';
+import { GameSettings } from './types/game';
+import { soundSynth } from './engine/audio/SoundSynth';
+import { retroBGM } from './engine/audio/RetroSynthwaveBGM';
+
+const SETTINGS_KEY = 'neon_reactor_settings_v1';
+const DEFAULT_SETTINGS: GameSettings = {
+  bgmVolume: 60,
+  sfxVolume: 80,
+  isBgmMuted: false,
+  isSfxMuted: false,
+  screenShake: 'normal',
+  particleQuality: 'high'
+};
 
 export function App() {
   const particleCanvasRef = useRef<ParticleCanvasHandle>(null);
+
+  const [settings, setSettings] = useState<GameSettings>(() => {
+    try {
+      const saved = localStorage.getItem(SETTINGS_KEY);
+      if (saved) return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+    } catch {
+      // fallback
+    }
+    return DEFAULT_SETTINGS;
+  });
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [menuInitialTab, setMenuInitialTab] = useState<'overview' | 'manual' | 'settings' | 'credits'>('overview');
 
   const {
     gameState,
@@ -34,6 +61,34 @@ export function App() {
   const [showVictoryModal, setShowVictoryModal] = useState(false);
   const [hasShownVictory, setHasShownVictory] = useState(false);
 
+  // Mở Menu
+  const handleOpenMenu = (tab: 'overview' | 'manual' | 'settings' | 'credits' = 'overview') => {
+    soundSynth.playMenuOpen();
+    setMenuInitialTab(tab);
+    setIsMenuOpen(true);
+  };
+
+  // Cập nhật Cài đặt
+  const handleUpdateSettings = (newSettings: Partial<GameSettings>) => {
+    setSettings(prev => {
+      const updated = { ...prev, ...newSettings };
+      try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      if (newSettings.bgmVolume !== undefined || newSettings.isBgmMuted !== undefined) {
+        retroBGM.setVolume(updated.isBgmMuted ? 0 : updated.bgmVolume / 100);
+        retroBGM.setMuted(updated.isBgmMuted);
+      }
+      if (newSettings.sfxVolume !== undefined || newSettings.isSfxMuted !== undefined) {
+        soundSynth.setVolume(updated.isSfxMuted ? 0 : updated.sfxVolume / 100);
+        soundSynth.setMuted(updated.isSfxMuted);
+      }
+      return updated;
+    });
+  };
+
   // Trigger Victory Modal on first win
   useEffect(() => {
     if (gameState.hasWon && !hasShownVictory) {
@@ -42,10 +97,20 @@ export function App() {
     }
   }, [gameState.hasWon, hasShownVictory]);
 
-  // Keyboard shortcut listener (Space = click core, X = Cryo Vent, 1-4 = buy upgrades)
+  // Keyboard shortcut listener (Space = click core, X = Cryo Vent, 1-4 = buy upgrades, ESC/M = menu)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.code === 'Escape' || e.code === 'KeyM') {
+        e.preventDefault();
+        setIsMenuOpen(prev => {
+          if (!prev) soundSynth.playMenuOpen();
+          else soundSynth.playMenuClose();
+          return !prev;
+        });
+        return;
+      }
 
       if (e.code === 'Space') {
         e.preventDefault();
@@ -144,6 +209,7 @@ export function App() {
         gameState={gameState}
         onToggleMute={toggleMute}
         onReset={resetGame}
+        onOpenMenu={handleOpenMenu}
       />
 
       {/* 2. Main Single-Screen Body (Dual Column Layout) */}
@@ -191,6 +257,17 @@ export function App() {
           }}
         />
       )}
+
+      {/* 5. Main Menu & Settings & Manual Modal */}
+      <MainMenuModal
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        gameState={gameState}
+        settings={settings}
+        onUpdateSettings={handleUpdateSettings}
+        onResetGame={resetGame}
+        initialTab={menuInitialTab}
+      />
     </div>
   );
 }

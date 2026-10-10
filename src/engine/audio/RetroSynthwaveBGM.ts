@@ -2,6 +2,7 @@ class RetroSynthwaveBGM {
   private ctx: AudioContext | null = null;
   private isPlaying: boolean = false;
   private isMuted: boolean = false;
+  private volume: number = 0.6;
   private timerId: number | null = null;
   private step: number = 0;
   private isOverdrive: boolean = false;
@@ -35,6 +36,10 @@ class RetroSynthwaveBGM {
 
   public setMuted(muted: boolean) {
     this.isMuted = muted;
+  }
+
+  public setVolume(vol: number) {
+    this.volume = Math.max(0, Math.min(1, vol));
   }
 
   public setOverdrive(overdrive: boolean) {
@@ -89,7 +94,7 @@ class RetroSynthwaveBGM {
     bassFilter.frequency.setValueAtTime(this.isOverdrive ? 1200 : 600, t);
     bassFilter.frequency.exponentialRampToValueAtTime(150, t + 0.12);
 
-    const bassVol = this.isOverdrive ? 0.08 : 0.05;
+    const bassVol = (this.isOverdrive ? 0.08 : 0.05) * this.volume;
     bassGain.gain.setValueAtTime(bassVol, t);
     bassGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
 
@@ -109,7 +114,7 @@ class RetroSynthwaveBGM {
       leadOsc.type = 'sine';
       leadOsc.frequency.setValueAtTime(leadFreq, t);
 
-      const leadVol = this.isOverdrive ? 0.05 : 0.025;
+      const leadVol = (this.isOverdrive ? 0.05 : 0.025) * this.volume;
       leadGain.gain.setValueAtTime(leadVol, t);
       leadGain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
 
@@ -138,7 +143,7 @@ class RetroSynthwaveBGM {
     filter.type = 'highpass';
     filter.frequency.setValueAtTime(7000, t);
 
-    gain.gain.setValueAtTime(0.02, t);
+    gain.gain.setValueAtTime(0.02 * this.volume, t);
     gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
 
     osc.connect(filter);

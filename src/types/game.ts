@@ -76,3 +76,16 @@ export interface Particle {
   targetX?: number;
   targetY?: number;
 }
+
+export type ScreenShakeLevel = 'off' | 'low' | 'normal' | 'high';
+export type ParticleQualityLevel = 'low' | 'high';
+
+export interface GameSettings {
+  bgmVolume: number; // 0 to 100
+  sfxVolume: number; // 0 to 100
+  isBgmMuted: boolean;
+  isSfxMuted: boolean;
+  screenShake: ScreenShakeLevel;
+  particleQuality: ParticleQualityLevel;
+}
+

@@ -1,6 +1,7 @@
 class SoundSynthEngine {
   private ctx: AudioContext | null = null;
   private isMuted: boolean = false;
+  private masterVolume: number = 0.8;
   private ambientOsc: OscillatorNode | null = null;
   private ambientGain: GainNode | null = null;
 
@@ -23,7 +24,14 @@ class SoundSynthEngine {
     if (muted && this.ambientGain) {
       this.ambientGain.gain.setValueAtTime(0, this.ctx?.currentTime || 0);
     } else if (!muted && this.ambientGain && this.ctx) {
-      this.ambientGain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+      this.ambientGain.gain.setValueAtTime(0.04 * this.masterVolume, this.ctx.currentTime);
+    }
+  }
+
+  public setVolume(vol: number) {
+    this.masterVolume = Math.max(0, Math.min(1, vol));
+    if (this.ambientGain && this.ctx && !this.isMuted) {
+      this.ambientGain.gain.setValueAtTime(0.04 * this.masterVolume, this.ctx.currentTime);
     }
   }
 
@@ -520,6 +528,127 @@ class SoundSynthEngine {
     gain.connect(this.ctx.destination);
     osc.start(t);
     osc.stop(t + 0.4);
+  }
+
+  // ── UI MENU SOUND EFFECTS ──
+
+  // Âm thanh mở Menu (Sci-Fi Uplink Whoosh)
+  public playMenuOpen() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(320, t);
+    osc.frequency.exponentialRampToValueAtTime(780, t + 0.18);
+
+    gain.gain.setValueAtTime(0.08 * this.masterVolume, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(t);
+    osc.stop(t + 0.24);
+  }
+
+  // Âm thanh đóng Menu
+  public playMenuClose() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(680, t);
+    osc.frequency.exponentialRampToValueAtTime(240, t + 0.15);
+
+    gain.gain.setValueAtTime(0.06 * this.masterVolume, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(t);
+    osc.stop(t + 0.2);
+  }
+
+  // Âm thanh chuyển Tab menu
+  public playMenuTab() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(520, t);
+    osc.frequency.setValueAtTime(780, t + 0.04);
+
+    gain.gain.setValueAtTime(0.05 * this.masterVolume, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(t);
+    osc.stop(t + 0.12);
+  }
+
+  // Âm thanh rê chuột qua nút
+  public playButtonHover() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, t);
+
+    gain.gain.setValueAtTime(0.02 * this.masterVolume, t);
+    gain.gain.exponentialRampToValueAtTime(0.0005, t + 0.04);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(t);
+    osc.stop(t + 0.05);
+  }
+
+  // Âm thanh toggle setting
+  public playSettingToggle() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(440, t);
+    osc.frequency.setValueAtTime(880, t + 0.05);
+
+    gain.gain.setValueAtTime(0.04 * this.masterVolume, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(t);
+    osc.stop(t + 0.13);
   }
 }
 
