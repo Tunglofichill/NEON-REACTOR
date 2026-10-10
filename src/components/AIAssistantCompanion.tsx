@@ -136,7 +136,25 @@ export const AIAssistantCompanion: React.FC<AIAssistantCompanionProps> = ({
       lastPhaseRef.current = currentPhase;
     }
 
-    // Sự kiện 6: Combo đạt các mốc ấn tượng (5, 10, 15, 20)
+    // Sự kiện 6: Dị thường Lượng Tử xuất hiện
+    if (gameState.activeAnomaly) {
+      speak('✨ Dị Thường Lượng Tử đang bay lượn kìa sếp! Bấm vào quả cầu nhanh kẻo bay mất!', false);
+      return;
+    }
+
+    // Sự kiện 7: Buff Đóng Băng đang bật
+    if (gameState.cryoFreezeRemaining > 6) {
+      speak('❄️ ĐÓNG BĂNG TUYỆT ĐỐI RỒI! Nhiệt khóa 0%, sếp click tẹt ga không bao giờ nổ!', true);
+      return;
+    }
+
+    // Sự kiện 8: Buff Frenzy x5 đang bật
+    if (gameState.frenzyRemaining > 8) {
+      speak('⚡ CUỒNG PHỘ FRENZY X5! Sản lượng tăng gấp 5 lần, click cháy chuột luôn sếp ơi!', true);
+      return;
+    }
+
+    // Sự kiện 9: Combo đạt các mốc ấn tượng (5, 10, 15, 20)
     if (comboCount >= 5 && Math.floor(comboCount / 5) > Math.floor(lastMilestoneComboRef.current / 5)) {
       lastMilestoneComboRef.current = comboCount;
       const line = DIALOGUES.combo[Math.floor(Math.random() * DIALOGUES.combo.length)].replace('{N}', comboCount.toString());

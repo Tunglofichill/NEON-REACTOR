@@ -42,8 +42,13 @@ Người chơi vào vai Chỉ Huy Trạm (Commander), tương tác trực tiếp
    - **Cấp 3:** Antimatter Core (Violet Singularity)
    - **Cấp 4:** Dark Matter Core (Crimson Plasma)
    - **Cấp 5:** Singularity Black Hole (Cosmic Awakening - Phá Đảo)
-6. **KIVA-OS v2.6 AI Co-Pilot:**
-   - Trợ lý AI đồng hành thoại theo ngữ cảnh thực tế (vừa nổ, nợ xấu, sắp nổ, thăng cấp, chu kỳ siêu dẫn).
+6. **Dị Thường Lượng Tử (Quantum Anomalies - Cơ Chế Tương Tác Bất Ngờ):**
+   - Cứ mỗi 16 - 25 giây, trong buồng phản ứng xuất hiện ngẫu nhiên **1 Quả Cầu Năng Lượng Bay Lơ Lửng** với 3 loại hiệu ứng cực mạnh:
+     - 🌟 **Kho Báu Lượng Tử (Surge):** Nhận ngay một lượng Joules khổng lồ tức thì!
+     - ❄️ **Đóng Băng Tuyệt Đối (Deep Freeze):** Khóa nhiệt độ về $0\%$ trong 8.5 giây $\to$ spam click tẹt ga không bao giờ nổ Lõi!
+     - ⚡ **Cuồng Nộ Lượng Tử (Frenzy x5):** Tăng gấp $\times 5$ toàn bộ sản lượng Joules từ Click và Drone trong 10 giây!
+7. **KIVA-OS v2.6 AI Co-Pilot:**
+   - Trợ lý AI đồng hành thoại theo ngữ cảnh thực tế (vừa nổ, nợ xấu, sắp nổ, thăng cấp, dị thường bay qua, kích hoạt siêu dẫn).
 
 ---
 

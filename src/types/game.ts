@@ -21,6 +21,19 @@ export interface EvolutionPhaseInfo {
   description: string;
 }
 
+export type AnomalyType = 'surge' | 'freeze' | 'frenzy';
+
+export interface QuantumAnomaly {
+  id: string;
+  type: AnomalyType;
+  x: number; // percent 10 to 85
+  y: number; // percent 15 to 80
+  vx: number;
+  vy: number;
+  timeLeft: number; // seconds
+  totalDuration: number;
+}
+
 export interface GameState {
   joules: number;
   totalJoulesEarned: number;
@@ -28,6 +41,9 @@ export interface GameState {
   heat: number; // 0 to 100
   isOverdrive: boolean;
   overdriveTimeRemaining: number; // seconds
+  cryoFreezeRemaining: number; // seconds buff: nhiệt bị khóa 0%, spam tẹt ga
+  frenzyRemaining: number; // seconds buff: sản lượng x5 toàn diện
+  activeAnomaly: QuantumAnomaly | null; // Dị thường lượng tử đang bay lượn
   upgrades: Record<UpgradeId, number>; // level per upgrade
   currentPhase: number; // 1 to 5
   hasWon: boolean;

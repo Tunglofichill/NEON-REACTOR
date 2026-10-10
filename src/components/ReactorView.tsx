@@ -11,6 +11,7 @@ interface ReactorViewProps {
   comboCount: number;
   onCoreClick: (clientX: number, clientY: number) => void;
   onCryoVent: () => void;
+  onAnomalyClick: (id: string, clientX?: number, clientY?: number) => void;
 }
 
 // Mini circular gauge SVG widget
@@ -63,7 +64,8 @@ export const ReactorView: React.FC<ReactorViewProps> = ({
   gameState,
   comboCount,
   onCoreClick,
-  onCryoVent
+  onCryoVent,
+  onAnomalyClick
 }) => {
   const [isPressing, setIsPressing] = useState(false);
   const currentPhaseInfo = EVOLUTION_PHASES[gameState.currentPhase - 1];
@@ -273,8 +275,105 @@ export const ReactorView: React.FC<ReactorViewProps> = ({
             </div>
           </div>
 
+          {/* ── QUANTUM ANOMALY FLOATING ORB (BÓNG DỊ THƯỜNG LƯỢNG TỬ) ── */}
+          {gameState.activeAnomaly && (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                onAnomalyClick(gameState.activeAnomaly!.id, e.clientX, e.clientY);
+              }}
+              className="absolute z-30 cursor-pointer select-none group transition-transform duration-75 active:scale-95"
+              style={{
+                left: `${gameState.activeAnomaly.x}%`,
+                top: `${gameState.activeAnomaly.y}%`,
+                transform: 'translate(-50%, -50%)',
+              }}
+            >
+              {/* Outer pulsing beacon ring */}
+              <div
+                className="absolute -inset-3 rounded-full animate-ping opacity-60 pointer-events-none"
+                style={{
+                  backgroundColor:
+                    gameState.activeAnomaly.type === 'surge'
+                      ? '#ffd700'
+                      : gameState.activeAnomaly.type === 'freeze'
+                      ? '#38bdf8'
+                      : '#c084fc',
+                }}
+              />
+
+              {/* Time radial countdown ring */}
+              <svg className="absolute -inset-2 w-14 h-14 -rotate-90 pointer-events-none">
+                <circle
+                  cx="28" cy="28" r="22"
+                  fill="none"
+                  stroke={
+                    gameState.activeAnomaly.type === 'surge'
+                      ? '#ffd700'
+                      : gameState.activeAnomaly.type === 'freeze'
+                      ? '#38bdf8'
+                      : '#c084fc'
+                  }
+                  strokeWidth="2.5"
+                  strokeDasharray="138"
+                  strokeDashoffset={138 * (1 - gameState.activeAnomaly.timeLeft / gameState.activeAnomaly.totalDuration)}
+                  className="transition-all duration-100"
+                />
+              </svg>
+
+              {/* Main Orb Sphere */}
+              <div
+                className="relative w-11 h-11 rounded-full flex items-center justify-center border-2 shadow-2xl transition-all duration-300 group-hover:scale-125 animate-pulse"
+                style={{
+                  background:
+                    gameState.activeAnomaly.type === 'surge'
+                      ? 'radial-gradient(circle, #fff 0%, #ffd700 45%, #b45309 100%)'
+                      : gameState.activeAnomaly.type === 'freeze'
+                      ? 'radial-gradient(circle, #fff 0%, #38bdf8 45%, #0369a1 100%)'
+                      : 'radial-gradient(circle, #fff 0%, #c084fc 45%, #6b21a8 100%)',
+                  borderColor: '#ffffff',
+                  boxShadow:
+                    gameState.activeAnomaly.type === 'surge'
+                      ? '0 0 30px #ffd700, 0 0 60px rgba(255,215,0,0.7)'
+                      : gameState.activeAnomaly.type === 'freeze'
+                      ? '0 0 30px #38bdf8, 0 0 60px rgba(56,189,248,0.7)'
+                      : '0 0 30px #c084fc, 0 0 60px rgba(192,132,252,0.7)',
+                }}
+              >
+                {gameState.activeAnomaly.type === 'surge' && <Sparkles className="w-5 h-5 text-amber-950 animate-spin" />}
+                {gameState.activeAnomaly.type === 'freeze' && <Snowflake className="w-5 h-5 text-sky-950 animate-spin" />}
+                {gameState.activeAnomaly.type === 'frenzy' && <Zap className="w-5 h-5 text-purple-950 animate-bounce" />}
+              </div>
+
+              {/* Floating Label Badge */}
+              <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap px-1.5 py-0.5 rounded text-[8px] font-orbitron font-black tracking-wider bg-black/95 border border-white/40 shadow-lg text-white pointer-events-none group-hover:scale-110 transition-transform">
+                {gameState.activeAnomaly.type === 'surge' ? 'KHO BÁU J' : gameState.activeAnomaly.type === 'freeze' ? 'ĐÓNG BĂNG' : 'FRENZY x5'}
+              </div>
+            </div>
+          )}
+
+          {/* ── ACTIVE TEMPORARY BUFF STATUS PILLS ── */}
+          <div className="absolute top-3 left-6 right-6 flex items-center justify-center gap-2 pointer-events-none z-20">
+            {gameState.cryoFreezeRemaining > 0 && (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/20 border border-sky-400/80 shadow-[0_0_20px_rgba(56,189,248,0.6)] backdrop-blur-md animate-pulse">
+                <Snowflake className="w-3.5 h-3.5 text-sky-300 animate-spin" />
+                <span className="text-[10px] font-orbitron font-bold text-sky-200">
+                  KHÓA NHIỆT 0%: {gameState.cryoFreezeRemaining.toFixed(1)}s (SPAM TỰ DO)
+                </span>
+              </div>
+            )}
+            {gameState.frenzyRemaining > 0 && (
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/80 shadow-[0_0_20px_rgba(192,132,252,0.6)] backdrop-blur-md animate-pulse">
+                <Zap className="w-3.5 h-3.5 text-purple-300 animate-bounce" />
+                <span className="text-[10px] font-orbitron font-bold text-purple-200">
+                  FRENZY x5 SẢN LƯỢNG: {gameState.frenzyRemaining.toFixed(1)}s
+                </span>
+              </div>
+            )}
+          </div>
+
           {/* Critical Warning Floating Alert when heat >= 90% */}
-          {gameState.heat >= 90 && !gameState.isOverdrive && (
+          {gameState.heat >= 90 && !gameState.isOverdrive && gameState.cryoFreezeRemaining <= 0 && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-600/90 text-white font-orbitron font-bold text-xs shadow-lg animate-bounce border border-yellow-300">
               <Skull className="w-4 h-4 animate-spin" />
               BÁO ĐỘNG ĐỎ: {Math.round(gameState.heat)}%! CHẠM 100% SẼ NỔ VÀ ÂM TIỀN!

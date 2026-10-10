@@ -328,6 +328,79 @@ class SoundSynthEngine {
     osc.start(t);
     osc.stop(t + 0.1);
   }
+
+  // Âm thanh khi Dị Thường Lượng Tử xuất hiện
+  public playAnomalySpawn() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, t);
+    osc.frequency.exponentialRampToValueAtTime(880, t + 0.4);
+    gain.gain.setValueAtTime(0.01, t);
+    gain.gain.linearRampToValueAtTime(0.15, t + 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.65);
+  }
+
+  // Âm thanh khi bắt trúng Dị Thường
+  public playAnomalyCollect(type: 'surge' | 'freeze' | 'frenzy') {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    if (type === 'surge') {
+      // Golden Arpeggio Chime
+      const freqs = [587.33, 739.99, 880.00, 1174.66, 1479.98];
+      freqs.forEach((freq, idx) => {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, t + idx * 0.05);
+        gain.gain.setValueAtTime(0.22, t + idx * 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.05 + 0.4);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t + idx * 0.05);
+        osc.stop(t + idx * 0.05 + 0.45);
+      });
+    } else if (type === 'freeze') {
+      // Crystal Frost Shatter & Freeze
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1200, t);
+      osc.frequency.exponentialRampToValueAtTime(300, t + 0.5);
+      gain.gain.setValueAtTime(0.25, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.6);
+    } else {
+      // Hyper Frenzy Laser Siren Pulse
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(300, t);
+      osc.frequency.linearRampToValueAtTime(1500, t + 0.3);
+      gain.gain.setValueAtTime(0.2, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.5);
+    }
+  }
 }
 
 export const soundSynth = new SoundSynthEngine();

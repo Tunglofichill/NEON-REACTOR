@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { GameState, UpgradeId } from '../types/game';
+import { GameState, UpgradeId, QuantumAnomaly, AnomalyType } from '../types/game';
 import {
   calculateUpgradeCost,
   calculateJPC,
@@ -26,6 +26,9 @@ const INITIAL_STATE: GameState = {
   heat: 0,
   isOverdrive: false,
   overdriveTimeRemaining: 0,
+  cryoFreezeRemaining: 0,
+  frenzyRemaining: 0,
+  activeAnomaly: null,
   upgrades: {
     plasmaLaser: 0,
     cryoJets: 0,
@@ -59,7 +62,12 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
   });
 
   const [comboCount, setComboCount] = useState<number>(0);
+  const comboCountRef = useRef<number>(0);
+  comboCountRef.current = comboCount;
   const lastClickTimeRef = useRef<number>(0);
+
+  const lastAnomalySpawnTimeRef = useRef<number>(performance.now() - 13000);
+  const nextAnomalyDelayRef = useRef<number>(16000);
 
   const [systemLog, setSystemLog] = useState<string>(
     'Trạm Phản Ứng Lượng Tử đã kích hoạt. Hãy nhấp chuột vào Lõi để bắt đầu khai thác Joules!'
@@ -98,8 +106,24 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
         const state = { ...prev };
         let stateChanged = false;
 
+        // Buff 1: Cryo Freeze countdown (khóa nhiệt 0%)
+        if (state.cryoFreezeRemaining > 0) {
+          state.cryoFreezeRemaining = Math.max(0, state.cryoFreezeRemaining - delta);
+          state.heat = 0;
+          stateChanged = true;
+        }
+
+        // Buff 2: Frenzy countdown (x5 Joules)
+        if (state.frenzyRemaining > 0) {
+          state.frenzyRemaining = Math.max(0, state.frenzyRemaining - delta);
+          stateChanged = true;
+        }
+
         // 1. Passive Auto Generation (JPS)
-        const jps = calculateJPS(state.upgrades, state.isOverdrive);
+        let jps = calculateJPS(state.upgrades, state.isOverdrive);
+        if (state.frenzyRemaining > 0) {
+          jps *= 5; // X5 JPS khi đang Frenzy
+        }
         if (jps > 0) {
           const earned = jps * delta;
           const wasInDebt = state.joules < 0;
@@ -125,7 +149,7 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
         }
 
         // 2. Cooling heat decay
-        if (state.heat > 0 && !state.isOverdrive) {
+        if (state.heat > 0 && !state.isOverdrive && state.cryoFreezeRemaining <= 0) {
           const coolingRate = calculateCoolingRate(state.upgrades);
           const effectiveCooling = state.heat >= 85 ? coolingRate * 0.35 : coolingRate;
           state.heat = Math.max(0, state.heat - effectiveCooling * delta);
@@ -163,6 +187,66 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
           }
         }
 
+        // 6. Dị Thường Lượng Tử (Quantum Anomaly Movement & Spawning)
+        if (state.activeAnomaly) {
+          const anom = { ...state.activeAnomaly };
+          anom.timeLeft -= delta;
+          anom.x += anom.vx * delta;
+          anom.y += anom.vy * delta;
+
+          // Phản xạ bật nảy trong buồng phản ứng
+          if (anom.x <= 8) {
+            anom.x = 8;
+            anom.vx = Math.abs(anom.vx);
+          } else if (anom.x >= 88) {
+            anom.x = 88;
+            anom.vx = -Math.abs(anom.vx);
+          }
+
+          if (anom.y <= 14) {
+            anom.y = 14;
+            anom.vy = Math.abs(anom.vy);
+          } else if (anom.y >= 78) {
+            anom.y = 78;
+            anom.vy = -Math.abs(anom.vy);
+          }
+
+          if (anom.timeLeft <= 0) {
+            state.activeAnomaly = null;
+            lastAnomalySpawnTimeRef.current = now;
+            nextAnomalyDelayRef.current = 16000 + Math.random() * 9000;
+          } else {
+            state.activeAnomaly = anom;
+          }
+          stateChanged = true;
+        } else {
+          if (now - lastAnomalySpawnTimeRef.current > nextAnomalyDelayRef.current) {
+            lastAnomalySpawnTimeRef.current = now;
+            nextAnomalyDelayRef.current = 18000 + Math.random() * 8000;
+
+            const rand = Math.random();
+            const type: AnomalyType = rand < 0.45 ? 'surge' : rand < 0.75 ? 'freeze' : 'frenzy';
+            const startFromLeft = Math.random() < 0.5;
+            const startX = startFromLeft ? 10 : 85;
+            const startY = 20 + Math.random() * 50;
+            const speedX = (startFromLeft ? 1 : -1) * (6 + Math.random() * 5);
+            const speedY = (Math.random() < 0.5 ? 1 : -1) * (4 + Math.random() * 5);
+
+            state.activeAnomaly = {
+              id: `anomaly_${Date.now()}`,
+              type,
+              x: startX,
+              y: startY,
+              vx: speedX,
+              vy: speedY,
+              timeLeft: 9.0,
+              totalDuration: 9.0
+            };
+            soundSynth.playAnomalySpawn();
+            stateChanged = true;
+          }
+        }
+
         return stateChanged ? state : prev;
       });
 
@@ -171,7 +255,7 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
 
     animationId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animationId);
-  }, [comboCount]);
+  }, []);
 
   // Handle Manual Click on Core
   const handleCoreClick = useCallback(
@@ -200,12 +284,17 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
       }
 
       const comboBonusMultiplier = 1 + nextCombo * 0.08;
-      const finalMultiplier = (isCrit ? critStats.multiplier : 1.0) * comboBonusMultiplier;
+      let finalMultiplier = (isCrit ? critStats.multiplier : 1.0) * comboBonusMultiplier;
+      if (state.frenzyRemaining > 0) {
+        finalMultiplier *= 5; // Frenzy x5!
+      }
       const earned = Math.round(baseJPC * finalMultiplier);
 
       // ── CHECK XEM CÓ BỊ PHÁT NỔ 100% NHIỆT ĐỘ KHÔNG ──
-      const nextPotentialHeat = state.heat + (state.isOverdrive ? 0 : 6.5);
-      const isMeltdownTriggered = !state.isOverdrive && nextPotentialHeat >= 100;
+      const nextPotentialHeat = state.cryoFreezeRemaining > 0
+        ? 0
+        : state.heat + (state.isOverdrive ? 0 : 6.5);
+      const isMeltdownTriggered = !state.isOverdrive && state.cryoFreezeRemaining <= 0 && nextPotentialHeat >= 100;
 
       if (isMeltdownTriggered) {
         // 💥 KÍCH HOẠT THẢM HỌA PHÁT NỔ LÕI
@@ -258,6 +347,8 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
       let textToDisplay = `+${earned}`;
       if (state.joules < 0) {
         textToDisplay = `TRẢ NỢ +${earned}`;
+      } else if (state.frenzyRemaining > 0) {
+        textToDisplay = `FRENZY x5! +${earned}`;
       } else if (nextCombo >= 3 && isCrit) {
         textToDisplay = `COMBO x${nextCombo}! +${earned}`;
       } else if (isCrit) {
@@ -271,13 +362,15 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
         clientY,
         textToDisplay,
         isCrit,
-        state.isOverdrive,
-        state.joules < 0 ? '#ff2a5f' : currentPhaseInfo.accentHex
+        state.isOverdrive || state.frenzyRemaining > 0,
+        state.joules < 0 ? '#ff2a5f' : state.frenzyRemaining > 0 ? '#c084fc' : currentPhaseInfo.accentHex
       );
 
       // Update state
       setGameState(prev => {
-        const nextHeat = Math.min(100, prev.heat + (prev.isOverdrive ? 0 : 6.5));
+        const nextHeat = prev.cryoFreezeRemaining > 0
+          ? 0
+          : Math.min(100, prev.heat + (prev.isOverdrive ? 0 : 6.5));
         const wasInDebt = prev.joules < 0;
         const newJoules = prev.joules + earned;
 
@@ -311,6 +404,57 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
       });
     },
     [canvasRef, comboCount]
+  );
+
+  // Handle Anomaly Click (Bắt quả cầu Dị Thường)
+  const handleAnomalyClick = useCallback(
+    (id: string, clientX?: number, clientY?: number) => {
+      const state = stateRef.current;
+      if (!state.activeAnomaly || state.activeAnomaly.id !== id) return;
+
+      const anom = state.activeAnomaly;
+      soundSynth.playAnomalyCollect(anom.type);
+
+      if (clientX && clientY) {
+        canvasRef.current?.emitClick(
+          clientX,
+          clientY,
+          anom.type === 'surge'
+            ? 'KHO BÁU LƯỢNG TỬ!'
+            : anom.type === 'freeze'
+            ? 'ĐÓNG BĂNG TUYỆT ĐỐI!'
+            : 'FRENZY x5!',
+          true,
+          true,
+          anom.type === 'surge' ? '#ffd700' : anom.type === 'freeze' ? '#38bdf8' : '#c084fc'
+        );
+      }
+
+      setGameState(prev => {
+        const next = { ...prev, activeAnomaly: null };
+        if (anom.type === 'surge') {
+          const baseJPC = calculateJPC(prev.upgrades, prev.isOverdrive);
+          const jps = calculateJPS(prev.upgrades, prev.isOverdrive);
+          const surgeBonus = Math.max(120, Math.round((jps * 25 + baseJPC * 35) * Math.max(1, prev.currentPhase)));
+          next.joules += surgeBonus;
+          if (prev.joules >= 0) {
+            next.totalJoulesEarned += surgeBonus;
+          } else if (next.joules > 0) {
+            next.totalJoulesEarned += next.joules;
+          }
+          setSystemLog(`🌟 BẮT ĐƯỢC DỊ THƯỜNG! Nhận ngay kho báu +${formatJoules(surgeBonus)} Joules!`);
+        } else if (anom.type === 'freeze') {
+          next.cryoFreezeRemaining = 8.5;
+          next.heat = 0;
+          setSystemLog('❄️ BẮT ĐƯỢC DỊ THƯỜNG BĂNG TUYẾT! Đóng băng nhiệt độ 0% trong 8.5s! Spam click tẹt ga!');
+        } else if (anom.type === 'frenzy') {
+          next.frenzyRemaining = 10.0;
+          setSystemLog('⚡ BẮT ĐƯỢC DỊ THƯỜNG CUỒNG PHỘ! X5 toàn bộ năng lượng Click & Drones trong 10s!');
+        }
+        return next;
+      });
+    },
+    [canvasRef]
   );
 
   // Handle Cryo Vent Overdrive activation
@@ -383,6 +527,7 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
     systemLog,
     handleCoreClick,
     handleCryoVent,
+    handleAnomalyClick,
     buyUpgrade,
     toggleMute,
     resetGame

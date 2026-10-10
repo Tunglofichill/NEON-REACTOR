@@ -17,6 +17,7 @@ export function App() {
     systemLog,
     handleCoreClick,
     handleCryoVent,
+    handleAnomalyClick,
     buyUpgrade,
     toggleMute,
     resetGame
@@ -146,6 +147,7 @@ export function App() {
             comboCount={comboCount}
             onCoreClick={handleCoreClick}
             onCryoVent={handleCryoVent}
+            onAnomalyClick={handleAnomalyClick}
           />
         </div>
 
