@@ -1,0 +1,232 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #040711;
+    color: #e2e8f0;
+    font-family: 'JetBrains Mono', monospace;
+    user-select: none;
+    -webkit-user-select: none;
+    overflow: hidden;
+  }
+}
+
+/* =========================================
+   NEON GLOW TEXT & BOX UTILITIES
+   ========================================= */
+.text-neon-cyan {
+  color: #00f0ff;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.8), 0 0 25px rgba(0, 240, 255, 0.4);
+}
+.text-neon-amber {
+  color: #ffb703;
+  text-shadow: 0 0 10px rgba(255, 183, 3, 0.8), 0 0 25px rgba(255, 183, 3, 0.4);
+}
+.text-neon-purple {
+  color: #d946ef;
+  text-shadow: 0 0 10px rgba(217, 70, 239, 0.8), 0 0 25px rgba(217, 70, 239, 0.4);
+}
+.text-neon-crimson {
+  color: #ff2a5f;
+  text-shadow: 0 0 10px rgba(255, 42, 95, 0.8), 0 0 25px rgba(255, 42, 95, 0.4);
+}
+
+/* =========================================
+   CYBERPUNK PANEL — Glassmorphism
+   ========================================= */
+.cyber-panel {
+  background: rgba(5, 10, 22, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 240, 255, 0.18);
+}
+
+.cyber-panel-amber {
+  background: rgba(10, 8, 0, 0.9);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 183, 3, 0.25);
+}
+
+/* =========================================
+   REACTOR CHAMBER FRAME — Angled Corners
+   ========================================= */
+.reactor-chamber {
+  position: relative;
+  background: rgba(2, 8, 20, 0.75);
+  clip-path: polygon(
+    0 0,
+    calc(100% - 24px) 0,
+    100% 24px,
+    100% 100%,
+    24px 100%,
+    0 calc(100% - 24px)
+  );
+  border: 1px solid rgba(0, 240, 255, 0.15);
+}
+
+.reactor-chamber::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center 40%,
+    rgba(0, 240, 255, 0.04) 0%,
+    rgba(0, 240, 255, 0.01) 45%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* =========================================
+   CORNER ACCENT DECORATIONS
+   ========================================= */
+.corner-tl::before,
+.corner-tl::after,
+.corner-br::before,
+.corner-br::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: #00f0ff;
+  border-style: solid;
+  opacity: 0.7;
+}
+.corner-tl::before {
+  top: 6px; left: 6px;
+  border-width: 2px 0 0 2px;
+}
+.corner-tl::after {
+  bottom: 6px; right: 6px;
+  border-width: 0 2px 2px 0;
+}
+
+/* =========================================
+   UPGRADE CARD HOVER GLOW EFFECT
+   ========================================= */
+.upgrade-card {
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.upgrade-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0,240,255,0.05) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.upgrade-card.can-afford:hover::before {
+  opacity: 1;
+}
+
+.upgrade-card.can-afford:hover {
+  border-color: rgba(0, 240, 255, 0.6) !important;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.15), inset 0 0 20px rgba(0, 240, 255, 0.05);
+  transform: translateX(-2px);
+}
+
+/* =========================================
+   ANIMATED ENERGY CONDUIT LINE
+   ========================================= */
+.energy-conduit {
+  position: absolute;
+  background: linear-gradient(90deg, transparent, #00f0ff, transparent);
+  height: 1px;
+  animation: conduit-flow 2s linear infinite;
+}
+
+@keyframes conduit-flow {
+  0% { background-position: -200% 0; opacity: 0; }
+  50% { opacity: 0.8; }
+  100% { background-position: 200% 0; opacity: 0; }
+}
+
+/* =========================================
+   HEAT BAR ANIMATED SEGMENTS
+   ========================================= */
+.heat-bar-fill {
+  position: relative;
+  overflow: hidden;
+}
+.heat-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+  animation: heat-shimmer 1.2s linear infinite;
+}
+@keyframes heat-shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* =========================================
+   CIRCULAR GAUGE WIDGET
+   ========================================= */
+.gauge-ring {
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+/* =========================================
+   SCANLINE CRT OVERLAY
+   ========================================= */
+.scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.12) 0px,
+    rgba(0, 0, 0, 0.12) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+}
+
+/* =========================================
+   SCROLLBAR
+   ========================================= */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.4); }
+::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.25); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0, 240, 255, 0.5); }
+
+/* =========================================
+   FLICKER ANIMATION FOR CRITICAL ALERTS
+   ========================================= */
+@keyframes flicker {
+  0%, 95%, 100% { opacity: 1; }
+  96%, 98% { opacity: 0.3; }
+}
+.flicker { animation: flicker 1.2s infinite; }
+
+/* =========================================
+   FADE IN KEYFRAME
+   ========================================= */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* =========================================
+   CORE QUANTUM BREATHING
+   ========================================= */
+@keyframes core-breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.025);
+  }
+}
+.core-pulse {
+  animation: core-breathe 4s ease-in-out infinite;
+}
