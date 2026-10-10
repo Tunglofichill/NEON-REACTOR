@@ -275,85 +275,191 @@ export const MainMenuModal: React.FC<MainMenuModalProps> = ({
             </div>
           )}
 
-          {/* ════════ TAB 2: HƯỚNG DẪN CHƠI (HOW TO PLAY) ════════ */}
+          {/* ════════ TAB 2: HƯỚNG DẪN CHƠI (VISUAL FIELD MANUAL) ════════ */}
           {activeTab === 'manual' && (
             <div className="space-y-4 animate-fade-in font-mono text-xs">
-              {/* Card 1: Khai thác năng lượng */}
-              <div className="p-4 rounded-xl border border-cyan-500/30 bg-cyan-950/20 space-y-2">
-                <div className="flex items-center gap-2 font-orbitron font-bold text-cyan-300 text-sm">
-                  <Zap className="w-4 h-4 text-cyan-400" />
-                  1. KHAI THÁC JOULES & NHỊP SÓNG HÀI (RESONANCE)
+              {/* Header Banner */}
+              <div className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-950/40 via-purple-950/30 to-black border border-cyan-500/30 flex items-center justify-between">
+                <span className="font-orbitron font-bold text-cyan-300 text-xs flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-cyan-400" />
+                  CẨM NANG VẬN HÀNH TRẠM • 5 CƠ CHẾ CỐT LÕI (VISUAL CODEX)
+                </span>
+                <span className="text-[10px] text-slate-400">Hình ảnh chụp thực tế in-game</span>
+              </div>
+
+              {/* Card 1: Khai thác năng lượng & Nhịp sóng hài */}
+              <div className="p-3.5 rounded-2xl border border-cyan-500/40 bg-gradient-to-br from-cyan-950/20 via-black/70 to-black/90 flex flex-col md:flex-row items-center gap-4 shadow-lg group">
+                <div className="relative w-full md:w-52 h-32 rounded-xl overflow-hidden border border-cyan-500/50 shadow-[0_0_15px_rgba(0,240,255,0.2)] flex-shrink-0 bg-black">
+                  <img
+                    src="/assets/manual/manual_1_core_click.png"
+                    alt="Khai thác Lõi & Nhịp sóng hài"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-black/85 border border-cyan-400/60 text-[8px] font-orbitron font-bold text-cyan-300">
+                    IN-GAME TELEMETRY
+                  </div>
                 </div>
-                <p className="text-slate-300 leading-relaxed">
-                  Nhấp chuột (hoặc ấn <kbd className="bg-slate-800 px-1.5 py-0.5 rounded text-cyan-300">Space</kbd>) vào quả cầu Lõi để tạo Joules điện tích. Canh nhịp đúng lúc vòng tròn sáng thở phập phồng (Resonance Pulse) để nhận <strong>CRIT ×3</strong> và cộng dồn chuỗi Combo!
-                </p>
-                <p className="text-slate-400">
-                  Đầu tư vào <strong>Subatomic Drones</strong> để tự động khai thác Joules mỗi giây (JPS) ngay cả khi bạn treo máy.
-                </p>
+
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex items-center gap-2 font-orbitron font-bold text-cyan-300 text-sm">
+                    <Zap className="w-4 h-4 text-cyan-400" />
+                    1. KHAI THÁC JOULES & NHỊP SÓNG HÀI (RESONANCE)
+                  </div>
+                  <ul className="space-y-1 text-slate-300 text-[11px] leading-relaxed">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-cyan-400 font-bold shrink-0">▸ Thao tác:</span>
+                      <span>Nhấp chuột vào Lõi hoặc gõ phím <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 font-bold border border-slate-700">Space</kbd> để tạo Joules điện tích.</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-400 font-bold shrink-0">▸ Canh nhịp:</span>
+                      <span>Click đúng nhịp thở Lõi (Resonance Pulse) để nhận <strong>CRIT ×3</strong> & cộng dồn chuỗi <strong>COMBO Streak</strong>!</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-emerald-400 font-bold shrink-0">▸ Drones:</span>
+                      <span>Nâng cấp Subatomic Drones để tự động cày Joules/giây (JPS) ngay cả khi treo máy.</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
 
               {/* Card 2: Hold-to-Charge Mega-Beam */}
-              <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-950/20 space-y-2">
-                <div className="flex items-center gap-2 font-orbitron font-bold text-amber-300 text-sm">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  2. ẤN & GIỮ SẠC TỤ (HOLD-TO-CHARGE) → BẮN MEGA-BEAM ×10
+              <div className="p-3.5 rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-950/20 via-black/70 to-black/90 flex flex-col md:flex-row items-center gap-4 shadow-lg group">
+                <div className="relative w-full md:w-52 h-32 rounded-xl overflow-hidden border border-amber-500/50 shadow-[0_0_15px_rgba(255,183,3,0.2)] flex-shrink-0 bg-black">
+                  <img
+                    src="/assets/manual/manual_2_megabeam.png"
+                    alt="Sạc tụ Arc Gauge Sweetspot"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-black/85 border border-amber-400/60 text-[8px] font-orbitron font-bold text-amber-300">
+                    SWEETSPOT GAUGE
+                  </div>
                 </div>
-                <p className="text-slate-300 leading-relaxed">
-                  Thay vì click spam nhàm chán, hãy <strong>ấn và giữ chuột trên Lõi</strong> (&gt;180ms) để nạp tụ áp suất.
-                  Vòng thước đo <strong>Arc Gauge</strong> quanh Lõi sẽ nạp từ 0% lên 100%.
-                </p>
-                <div className="p-3 rounded-lg bg-black/60 border border-amber-400/40 text-amber-200 space-y-1">
-                  <div>🔥 <strong>Vạch Vàng Sweetspot (75% - 92%):</strong> Nhả chuột ngay tại vùng vàng để bắn chùm tia <strong>MEGA-BEAM ×10 JOULES</strong> và <strong>hạ nhiệt -15% khẩn cấp</strong>!</div>
-                  <div className="text-slate-400">⚡ <em>Nhả non (&lt;75%):</em> Chỉ xả xung yếu ×1.5 J.</div>
-                  <div className="text-rose-400">⚠️ <em>Quá tải (&gt;100% / giữ &gt;1.75s):</em> Nổ đoản mạch giật điện, bị phạt +22% nhiệt độ!</div>
+
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex items-center gap-2 font-orbitron font-bold text-amber-300 text-sm">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    2. ẤN & GIỮ SẠC (HOLD-TO-CHARGE) → MEGA-BEAM ×10
+                  </div>
+                  <ul className="space-y-1 text-slate-300 text-[11px] leading-relaxed">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-400 font-bold shrink-0">▸ Sạc tụ:</span>
+                      <span>Ấn & giữ chuột trên Lõi (&gt;180ms). Vòng tròn Arc Gauge sẽ nạp từ 0% đến 100%.</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-300 font-bold shrink-0">🔥 Vạch Vàng (75% - 92%):</span>
+                      <span>Nhả chuột đúng vạch vàng để bắn <strong>MEGA-BEAM ×10 JOULES</strong> và <strong>hạ -15% nhiệt</strong>!</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-rose-400 font-bold shrink-0">⚠️ Đoản mạch:</span>
+                      <span>Giữ quá 100% (&gt;1.75s) sẽ nổ tụ điện nội bộ, bị phạt <strong>+22% nhiệt độ</strong>!</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
 
-              {/* Card 3: Bẫy quá nhiệt & Nổ 100% */}
-              <div className="p-4 rounded-xl border border-red-500/30 bg-red-950/20 space-y-2">
-                <div className="flex items-center gap-2 font-orbitron font-bold text-red-400 text-sm">
-                  <Flame className="w-4 h-4 text-red-400" />
-                  3. BẪY QUÁ NHIỆT & THẢM HỌA NỔ LÕI 100% (ÂM TIỀN)
+              {/* Card 3: Bẫy quá nhiệt & Overdrive */}
+              <div className="p-3.5 rounded-2xl border border-red-500/40 bg-gradient-to-br from-red-950/20 via-black/70 to-black/90 flex flex-col md:flex-row items-center gap-4 shadow-lg group">
+                <div className="relative w-full md:w-52 h-32 rounded-xl overflow-hidden border border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] flex-shrink-0 bg-black">
+                  <img
+                    src="/assets/manual/manual_3_heat_overdrive.png"
+                    alt="Bẫy quá nhiệt 85% và nút xả tản nhiệt"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-black/85 border border-red-400/60 text-[8px] font-orbitron font-bold text-red-300">
+                    CRITICAL HEAT ≥85%
+                  </div>
                 </div>
-                <p className="text-slate-300 leading-relaxed">
-                  Click nhanh sẽ làm tăng thanh nhiệt. Khi nhiệt đạt <strong>≥ 85%</strong>, nút <strong>XẢ TẢN NHIỆT KHẨN CẤP</strong> sẽ kích hoạt. Nhấn ngay để đưa nhiệt về 0% và kích hoạt trạng thái <strong>SIÊU DẪN OVERDRIVE ×3 SẢN LƯỢNG</strong>!
-                </p>
-                <div className="p-2.5 rounded-lg bg-red-950/60 border border-red-500/50 text-red-300">
-                  💥 <strong>CẢNH BÁO NỔ LÕI:</strong> Nếu cố tình để nhiệt độ chạm mốc <strong>100%</strong>, Lõi sẽ nổ tung! Toàn bộ cấp độ bị tụt về Phase 1 (Plasma Core) và bị <strong>PHẠT ÂM TIỀN (NỢ NĂNG LƯỢNG)</strong>! Bạn bắt buộc phải cày trả hết nợ (ví ≥ 0) mới được mở khóa tiến hóa trở lại!
+
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex items-center gap-2 font-orbitron font-bold text-red-400 text-sm">
+                    <Flame className="w-4 h-4 text-red-400" />
+                    3. BẪY QUÁ NHIỆT & SIÊU DẪN OVERDRIVE ×3
+                  </div>
+                  <ul className="space-y-1 text-slate-300 text-[11px] leading-relaxed">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-sky-300 font-bold shrink-0">⚡ Xả Tản Nhiệt:</span>
+                      <span>Khi nhiệt đạt <strong>≥ 85%</strong>, bấm nút Xả để đưa nhiệt về 0% và nhận <strong>OVERDRIVE ×3 SẢN LƯỢNG</strong>!</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-red-400 font-bold shrink-0">💥 Thảm Họa Nổ 100%:</span>
+                      <span>Chạm 100% Lõi sẽ nổ tung, <strong>tụt cấp về Phase 1</strong> và <strong>bị phạt âm tiền (nợ năng lượng)</strong>!</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-400 font-bold shrink-0">🔒 Khóa Tiến Hóa:</span>
+                      <span>Bắt buộc cày trả hết nợ (ví ≥ 0) mới được mở khóa tiếp tục tiến hóa!</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
 
-              {/* Card 4: Dị Thường Lượng Tử */}
-              <div className="p-4 rounded-xl border border-purple-500/30 bg-purple-950/20 space-y-2">
-                <div className="flex items-center gap-2 font-orbitron font-bold text-purple-300 text-sm">
-                  <Sparkles className="w-4 h-4 text-purple-400" />
-                  4. BÓNG DỊ THƯỜNG LƯỢNG TỬ (QUANTUM ANOMALIES)
+              {/* Card 4: 3 Loại bóng dị thường */}
+              <div className="p-3.5 rounded-2xl border border-purple-500/40 bg-gradient-to-br from-purple-950/20 via-black/70 to-black/90 flex flex-col md:flex-row items-center gap-4 shadow-lg group">
+                <div className="relative w-full md:w-52 h-32 rounded-xl overflow-hidden border border-purple-500/50 shadow-[0_0_15px_rgba(192,132,252,0.2)] flex-shrink-0 bg-black">
+                  <img
+                    src="/assets/manual/manual_4_quantum_anomaly.png"
+                    alt="3 loại bóng dị thường lượng tử"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-black/85 border border-purple-400/60 text-[8px] font-orbitron font-bold text-purple-300">
+                    ANOMALY ORBS
+                  </div>
                 </div>
-                <p className="text-slate-300 leading-relaxed">
-                  Các quả cầu dị thường sẽ xuất hiện ngẫu nhiên và bay nảy trong buồng phản ứng:
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-1 text-[11px]">
-                  <div className="p-2 rounded bg-black/60 border border-amber-400/50 text-amber-300">
-                    🟡 <strong>Kho Báu J (Surge):</strong> Nhận ngay khoản Joules khổng lồ.
+
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex items-center gap-2 font-orbitron font-bold text-purple-300 text-sm">
+                    <Sparkles className="w-4 h-4 text-purple-400" />
+                    4. BÓNG DỊ THƯỜNG LƯỢNG TỬ (QUANTUM ANOMALIES)
                   </div>
-                  <div className="p-2 rounded bg-black/60 border border-sky-400/50 text-sky-300">
-                    🔵 <strong>Đóng Băng (Deep Freeze):</strong> Khóa nhiệt 0% trong 8.5s (spam tẹt ga).
-                  </div>
-                  <div className="p-2 rounded bg-black/60 border border-purple-400/50 text-purple-300">
-                    🟣 <strong>Cuồng Nộ (Frenzy):</strong> X5 toàn bộ sản lượng Click & Drones trong 10s!
-                  </div>
+                  <ul className="space-y-1 text-slate-300 text-[11px] leading-relaxed">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-amber-300 font-bold shrink-0">🟡 Kho Báu J:</span>
+                      <span>Bóng vàng bay bồng bềnh $\to$ Nhấp để nhận ngay khoản Joules kho báu khổng lồ.</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-sky-300 font-bold shrink-0">🔵 Đóng Băng Tuyệt Đối:</span>
+                      <span>Bóng xanh $\to$ Khóa nhiệt độ <strong>0% trong 8.5s</strong> (thoải mái spam click không sợ nóng).</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-purple-300 font-bold shrink-0">🟣 Cuồng Nộ Frenzy:</span>
+                      <span>Bóng tím $\to$ <strong>Nhân ×5</strong> toàn bộ sản lượng Click & Drones trong 10 giây!</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
 
-              {/* Card 5: Anti-Autoclick */}
-              <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-950/20 space-y-2">
-                <div className="flex items-center gap-2 font-orbitron font-bold text-rose-400 text-sm">
-                  <ShieldAlert className="w-4 h-4 text-rose-400" />
-                  5. AN NINH BẢO VỆ CHỐNG AUTO-CLICK (ANTI-BOT)
+              {/* Card 5: Anti-Autoclick Heuristics */}
+              <div className="p-3.5 rounded-2xl border border-rose-500/40 bg-gradient-to-br from-rose-950/20 via-black/70 to-black/90 flex flex-col md:flex-row items-center gap-4 shadow-lg group">
+                <div className="relative w-full md:w-52 h-32 rounded-xl overflow-hidden border border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.2)] flex-shrink-0 bg-black">
+                  <img
+                    src="/assets/manual/manual_5_anti_autoclick.png"
+                    alt="Lồng ngắt mạch Anti-Autoclick"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-black/85 border border-rose-400/60 text-[8px] font-orbitron font-bold text-rose-300">
+                    ANTI-BOT LOCKOUT
+                  </div>
                 </div>
-                <p className="text-slate-300 leading-relaxed">
-                  Hệ thống kiểm soát bằng thuật toán Heuristics: nếu phát hiện tần số click bất thường (&gt;16 CPS) hoặc nhịp độ đều đặn chuẩn xác như robot, hệ thống sẽ <strong>ngắt mạch cảm ứng Lõi 3.5 giây</strong>. Hãy chơi bằng kỹ năng chân chính của bạn!
-                </p>
+
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex items-center gap-2 font-orbitron font-bold text-rose-400 text-sm">
+                    <ShieldAlert className="w-4 h-4 text-rose-400" />
+                    5. AN NINH BẢO VỆ CHỐNG BOT (ANTI-AUTOCLICK)
+                  </div>
+                  <ul className="space-y-1 text-slate-300 text-[11px] leading-relaxed">
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-rose-400 font-bold shrink-0">🛡️ Cảm biến Heuristics:</span>
+                      <span>Phát hiện nhấp chuột &gt;16 CPS hoặc nhịp bấm quá đều đặn như máy móc.</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-rose-300 font-bold shrink-0">🔒 Ngắt Mạch 3.5s:</span>
+                      <span>Lõi chuyển sang lồng EMP đỏ cam, ngắt cảm ứng 3.5 giây để bảo vệ tụ điện.</span>
+                    </li>
+                    <li className="flex items-start gap-1.5">
+                      <span className="text-slate-400 font-bold shrink-0">💡 Lời khuyên:</span>
+                      <span>Hãy chơi bằng kỹ năng và nhịp điệu của một kỹ sư chân chính!</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
           )}
