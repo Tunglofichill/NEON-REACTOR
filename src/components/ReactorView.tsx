@@ -3,13 +3,21 @@ import { GameState } from '../types/game';
 import { EVOLUTION_PHASES, OVERDRIVE_MULTIPLIER } from '../data/gameConstants';
 import { calculateJPC, calculateCritStats, calculateJPS } from '../utils/gameCalculations';
 import { AIAssistantCompanion } from './AIAssistantCompanion';
-import { Flame, Snowflake, Zap, AlertTriangle, Crosshair, Sparkles, Activity, Cpu, Skull } from 'lucide-react';
+import { Flame, Snowflake, Zap, AlertTriangle, Crosshair, Sparkles, Activity, Cpu, Skull, ShieldAlert, Lock } from 'lucide-react';
 import { formatRate, formatJoules } from '../utils/formatters';
 
 interface ReactorViewProps {
   gameState: GameState;
   comboCount: number;
+  isAntiBotLocked?: boolean;
+  antiBotTimeLeft?: number;
+  chargeProgress?: number;
+  isCharging?: boolean;
+  isMegaBeamFiring?: boolean;
   onCoreClick: (clientX: number, clientY: number) => void;
+  onCorePointerDown?: (clientX: number, clientY: number) => void;
+  onCorePointerUp?: (clientX: number, clientY: number) => void;
+  onCorePointerLeave?: () => void;
   onCryoVent: () => void;
   onAnomalyClick: (id: string, clientX?: number, clientY?: number) => void;
 }
@@ -63,7 +71,15 @@ const CircularGauge: React.FC<{ value: number; max: number; label: string; unit:
 export const ReactorView: React.FC<ReactorViewProps> = ({
   gameState,
   comboCount,
+  isAntiBotLocked = false,
+  antiBotTimeLeft = 0,
+  chargeProgress = 0,
+  isCharging = false,
+  isMegaBeamFiring = false,
   onCoreClick,
+  onCorePointerDown,
+  onCorePointerUp,
+  onCorePointerLeave,
   onCryoVent,
   onAnomalyClick
 }) => {
@@ -76,10 +92,28 @@ export const ReactorView: React.FC<ReactorViewProps> = ({
   const isOverheatReady = gameState.heat >= 85 && !gameState.isOverdrive;
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isAntiBotLocked) return;
     setIsPressing(true);
-    onCoreClick(e.clientX, e.clientY);
+    if (onCorePointerDown) {
+      onCorePointerDown(e.clientX, e.clientY);
+    } else {
+      onCoreClick(e.clientX, e.clientY);
+    }
   };
-  const handlePointerUp = () => setIsPressing(false);
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    setIsPressing(false);
+    if (onCorePointerUp) {
+      onCorePointerUp(e.clientX, e.clientY);
+    }
+  };
+
+  const handlePointerLeave = () => {
+    setIsPressing(false);
+    if (onCorePointerLeave) {
+      onCorePointerLeave();
+    }
+  };
 
   const accent = currentPhaseInfo.accentHex;
 
@@ -204,56 +238,182 @@ export const ReactorView: React.FC<ReactorViewProps> = ({
               style={{
                 width: '196px',
                 height: '196px',
-                backgroundColor: gameState.joules < 0 ? '#ff2a5f' : accent,
+                backgroundColor: isAntiBotLocked
+                  ? '#f43f5e'
+                  : gameState.joules < 0
+                  ? '#ff2a5f'
+                  : chargeProgress >= 75 && chargeProgress <= 92
+                  ? '#ffd700'
+                  : accent,
                 filter: 'blur(40px)',
-                opacity: gameState.isOverdrive ? 0.45 : 0.25,
-                transition: 'all 0.5s ease'
+                opacity: isCharging ? 0.6 : gameState.isOverdrive ? 0.45 : 0.25,
+                transition: 'all 0.3s ease'
               }}
             />
+
+            {/* ── ARC CHARGE GAUGE (VÒNG ĐỒNG TÂM THƯỚC ĐO SẠC ĐIỆN ÁP & SWEETSPOT) ── */}
+            {(isCharging || chargeProgress > 0) && (
+              <svg
+                className="absolute inset-0 w-full h-full pointer-events-none z-20"
+                viewBox="0 0 280 280"
+              >
+                {/* 1. Track nền rãnh */}
+                <circle
+                  cx="140" cy="140" r="100"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.08)"
+                  strokeWidth="8"
+                />
+
+                {/* 2. Sweetspot Target Zone Arc (75% - 92%, chu vi 628.32, cung dài 106.81, lệch -471.24) */}
+                <circle
+                  cx="140" cy="140" r="100"
+                  fill="none"
+                  stroke="#ffd700"
+                  strokeWidth="8"
+                  strokeDasharray="106.81 521.51"
+                  strokeDashoffset="-471.24"
+                  transform="rotate(-90 140 140)"
+                  opacity="0.8"
+                  style={{ filter: 'drop-shadow(0 0 6px #ffd700)' }}
+                />
+
+                {/* 3. Vạch nạp sạc áp suất thực tế */}
+                <circle
+                  cx="140" cy="140" r="100"
+                  fill="none"
+                  stroke={chargeProgress < 75 ? '#00f0ff' : chargeProgress <= 92 ? '#ffd700' : '#ef4444'}
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray="628.32"
+                  strokeDashoffset={628.32 * (1 - chargeProgress / 100)}
+                  transform="rotate(-90 140 140)"
+                  style={{
+                    filter: chargeProgress >= 75 && chargeProgress <= 92
+                      ? 'drop-shadow(0 0 10px #ffd700)'
+                      : chargeProgress > 92
+                      ? 'drop-shadow(0 0 10px #ef4444)'
+                      : 'drop-shadow(0 0 6px #00f0ff)'
+                  }}
+                />
+
+                {/* Markers tại mốc 75% và 92% */}
+                <line x1="40" y1="140" x2="33" y2="140" stroke="#ffd700" strokeWidth="2.5" />
+              </svg>
+            )}
+
+            {/* Status Tooltip / Badge khi đang giữ sạc Lõi */}
+            {isCharging && (
+              <div
+                className={`absolute -top-8 z-30 px-3 py-1 rounded-full border shadow-2xl flex items-center gap-1.5 backdrop-blur-md transition-all ${
+                  chargeProgress >= 75 && chargeProgress <= 92
+                    ? 'bg-amber-950/95 border-amber-400 text-amber-300 scale-110 shadow-[0_0_20px_#ffd700] animate-pulse'
+                    : chargeProgress > 92
+                    ? 'bg-red-950/95 border-red-500 text-red-300 scale-105 shadow-[0_0_20px_#ef4444] animate-bounce'
+                    : 'bg-black/90 border-cyan-500/80 text-cyan-300'
+                }`}
+              >
+                {chargeProgress >= 75 && chargeProgress <= 92 ? (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-spin" />
+                    <span className="font-orbitron font-black text-[11px] tracking-wider leading-none">
+                      SWEETSPOT ({Math.round(chargeProgress)}%)! NHẢ ĐỂ BẮN x10!
+                    </span>
+                  </>
+                ) : chargeProgress > 92 ? (
+                  <>
+                    <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                    <span className="font-orbitron font-black text-[10px] tracking-wider leading-none">
+                      NGUY CẤP QUÁ TẢI ({Math.round(chargeProgress)}%)! NHẢ NGAY!
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-3 h-3 text-cyan-400" />
+                    <span className="font-orbitron font-bold text-[10px] tracking-wider leading-none">
+                      SẠC TỤ ĐIỆN: {Math.round(chargeProgress)}%
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* 4. ── THE CORE ── (Quả cầu Lõi tròn chuẩn 100% 184px x 184px) */}
             <div
               data-testid="reactor-core"
               onPointerDown={handlePointerDown}
               onPointerUp={handlePointerUp}
-              onPointerLeave={handlePointerUp}
+              onPointerLeave={handlePointerLeave}
+              onPointerCancel={handlePointerLeave}
               className={`relative z-10 cursor-pointer rounded-full overflow-hidden select-none aspect-square flex items-center justify-center ${
-                gameState.joules < 0 ? 'ring-4 ring-red-500/80 animate-pulse' : ''
+                isAntiBotLocked
+                  ? 'ring-4 ring-rose-500 animate-pulse cursor-not-allowed'
+                  : gameState.joules < 0
+                  ? 'ring-4 ring-red-500/80 animate-pulse'
+                  : ''
               }`}
               style={{
                 width: '184px',
                 height: '184px',
-                boxShadow: gameState.joules < 0
+                boxShadow: isAntiBotLocked
+                  ? '0 0 50px rgba(244,63,94,0.9), 0 0 90px rgba(244,63,94,0.5)'
+                  : gameState.joules < 0
                   ? '0 0 50px rgba(255,42,95,0.8), 0 0 90px rgba(255,42,95,0.4)'
+                  : chargeProgress >= 75 && chargeProgress <= 92
+                  ? '0 0 60px rgba(255,215,0,0.85), 0 0 100px rgba(255,215,0,0.4)'
                   : `0 0 45px ${accent}60, 0 0 80px ${accent}25`,
-                transform: isPressing ? 'scale(0.92)' : 'scale(1)',
-                outline: gameState.joules < 0
+                transform: isPressing ? 'scale(0.93)' : 'scale(1)',
+                outline: isAntiBotLocked
+                  ? '3px dashed #f43f5e'
+                  : gameState.joules < 0
                   ? '3px dashed #ff2a5f'
                   : gameState.isOverdrive
                   ? `3px solid ${accent}`
                   : 'none',
-                transition: 'transform 0.08s ease, outline 0.3s ease, box-shadow 0.5s ease'
+                transition: 'transform 0.08s ease, outline 0.3s ease, box-shadow 0.3s ease'
               }}
             >
               <img
                 src={currentPhaseInfo.image}
                 alt={currentPhaseInfo.name}
-                className="w-full h-full object-cover rounded-full pointer-events-none core-pulse"
+                className={`w-full h-full object-cover rounded-full pointer-events-none core-pulse ${
+                  isAntiBotLocked ? 'grayscale contrast-125' : ''
+                }`}
                 style={{
-                  filter: gameState.joules < 0 ? 'sepia(0.6) hue-rotate(300deg)' : 'none'
+                  filter: isAntiBotLocked
+                    ? 'grayscale(0.85) contrast(1.2)'
+                    : gameState.joules < 0
+                    ? 'sepia(0.6) hue-rotate(300deg)'
+                    : 'none'
                 }}
               />
 
               {/* Overdrive shimmer overlay */}
-              {gameState.isOverdrive && (
+              {gameState.isOverdrive && !isAntiBotLocked && (
                 <div className="absolute inset-0 pointer-events-none rounded-full" style={{ background: 'radial-gradient(circle, rgba(0,240,255,0.25) 0%, transparent 70%)', animation: 'pulse 0.8s ease-in-out infinite' }} />
               )}
 
               {/* Meltdown danger overlay when >= 90% */}
-              {gameState.heat >= 90 && !gameState.isOverdrive && (
+              {gameState.heat >= 90 && !gameState.isOverdrive && !isAntiBotLocked && (
                 <div className="absolute inset-0 pointer-events-none bg-red-600/35 rounded-full flex items-center justify-center flicker">
                   <span className="font-orbitron font-black text-[11px] text-white bg-red-600 px-2 py-0.5 rounded shadow-lg uppercase">
                     SẮP NỔ 100%!
+                  </span>
+                </div>
+              )}
+
+              {/* ── ANTI-AUTOCLICK LOCKOUT OVERLAY ── */}
+              {isAntiBotLocked && (
+                <div className="absolute inset-0 z-30 rounded-full bg-rose-950/85 border-2 border-rose-500 flex flex-col items-center justify-center p-2 backdrop-blur-sm pointer-events-none">
+                  <ShieldAlert className="w-8 h-8 text-rose-400 animate-bounce mb-1 drop-shadow-[0_0_8px_#f43f5e]" />
+                  <span className="font-orbitron font-black text-[10px] text-white tracking-widest text-center leading-tight">
+                    KHÓA ANTI-BOT
+                  </span>
+                  <span className="font-orbitron font-black text-rose-300 text-sm mt-0.5">
+                    {antiBotTimeLeft.toFixed(1)}s
+                  </span>
+                  <span className="text-[7.5px] text-rose-200/80 font-mono text-center uppercase tracking-wider mt-0.5">
+                    BẢO VỆ TỤ ĐIỆN
                   </span>
                 </div>
               )}
@@ -264,16 +424,69 @@ export const ReactorView: React.FC<ReactorViewProps> = ({
               className="absolute -bottom-3 z-20 px-3 py-1 rounded-full border shadow-lg flex items-center gap-1.5 backdrop-blur-md"
               style={{
                 background: 'rgba(2, 6, 16, 0.92)',
-                borderColor: gameState.joules < 0 ? 'rgba(255,42,95,0.6)' : `${accent}60`,
-                boxShadow: gameState.joules < 0 ? '0 0 12px rgba(255,42,95,0.4)' : `0 0 12px ${accent}30`
+                borderColor: isAntiBotLocked
+                  ? 'rgba(244,63,94,0.8)'
+                  : gameState.joules < 0
+                  ? 'rgba(255,42,95,0.6)'
+                  : `${accent}60`,
+                boxShadow: isAntiBotLocked
+                  ? '0 0 12px rgba(244,63,94,0.5)'
+                  : gameState.joules < 0
+                  ? '0 0 12px rgba(255,42,95,0.4)'
+                  : `0 0 12px ${accent}30`
               }}
             >
-              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: gameState.joules < 0 ? '#ff2a5f' : accent }} />
-              <span className="font-orbitron text-[10px] font-bold tracking-widest leading-none" style={{ color: gameState.joules < 0 ? '#ff2a5f' : accent }}>
-                {gameState.joules < 0 ? `ĐANG TRẢ NỢ: ${formatJoules(gameState.joules)}` : currentPhaseInfo.name.toUpperCase()}
+              <div
+                className="w-1.5 h-1.5 rounded-full animate-pulse"
+                style={{
+                  backgroundColor: isAntiBotLocked ? '#f43f5e' : gameState.joules < 0 ? '#ff2a5f' : accent
+                }}
+              />
+              <span
+                className="font-orbitron text-[10px] font-bold tracking-widest leading-none"
+                style={{
+                  color: isAntiBotLocked ? '#f43f5e' : gameState.joules < 0 ? '#ff2a5f' : accent
+                }}
+              >
+                {isAntiBotLocked
+                  ? `NGẮT MẠCH: ${antiBotTimeLeft.toFixed(1)}S`
+                  : gameState.joules < 0
+                  ? `ĐANG TRẢ NỢ: ${formatJoules(gameState.joules)}`
+                  : currentPhaseInfo.name.toUpperCase()}
               </span>
             </div>
           </div>
+
+          {/* ── MEGA-BEAM CYBERNETIC LASER BURST EFFECT ── */}
+          {isMegaBeamFiring && (
+            <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center overflow-hidden animate-pulse">
+              {/* Fullscreen cyan flash */}
+              <div className="absolute inset-0 bg-cyan-400/20 backdrop-blur-[1px]" />
+
+              {/* Horizontal Core Laser Beam */}
+              <div
+                className="absolute w-[200vw] h-12 -translate-x-1/2 left-1/2"
+                style={{
+                  background: 'linear-gradient(to bottom, transparent, rgba(0,240,255,0.8) 25%, #ffffff 50%, rgba(0,240,255,0.8) 75%, transparent)',
+                  boxShadow: '0 0 50px #00f0ff, 0 0 90px #00f0ff, 0 0 160px rgba(0,240,255,0.9)'
+                }}
+              />
+
+              {/* Expanding Shockwave Flare */}
+              <div
+                className="absolute w-64 h-64 rounded-full border-4 border-cyan-200 animate-ping"
+                style={{
+                  background: 'radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(0,240,255,0.4) 50%, transparent 75%)',
+                  boxShadow: '0 0 70px #00f0ff'
+                }}
+              />
+
+              {/* Floating Beam Discharge Title */}
+              <div className="absolute font-orbitron font-black text-xl md:text-2xl tracking-widest text-cyan-200 drop-shadow-[0_0_15px_#00f0ff] -translate-y-20 animate-bounce">
+                ⚡ MEGA-BEAM x10 DISCHARGE! ⚡
+              </div>
+            </div>
+          )}
 
           {/* ── QUANTUM ANOMALY FLOATING ORB (BÓNG DỊ THƯỜNG LƯỢNG TỬ) ── */}
           {gameState.activeAnomaly && (
@@ -521,6 +734,20 @@ export const ReactorView: React.FC<ReactorViewProps> = ({
               )}
             </button>
           )}
+
+          {/* Tactical Hold-to-Charge & Anti-Bot Tip */}
+          <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 px-3 py-1.5 rounded-lg bg-black/60 border border-slate-800/80">
+            <span className="flex items-center gap-1.5 text-cyan-300">
+              <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>
+                <strong className="text-amber-400">CHIẾN THUẬT:</strong> Giữ chuột sạc Lõi ~1.2s nhả tại vạch vàng Sweetspot (75-92%) để bắn <strong className="text-cyan-300">MEGA-BEAM ×10</strong> & hạ <strong className="text-sky-300">-15% nhiệt</strong>!
+              </span>
+            </span>
+            <span className="hidden lg:flex items-center gap-1 text-slate-500 shrink-0">
+              <ShieldAlert className="w-3 h-3 text-rose-400" />
+              Anti-Bot Active
+            </span>
+          </div>
         </div>
       </div>
     </div>

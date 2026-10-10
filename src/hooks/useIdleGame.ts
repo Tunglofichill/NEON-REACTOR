@@ -66,15 +66,107 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
   comboCountRef.current = comboCount;
   const lastClickTimeRef = useRef<number>(0);
 
+  // ── ANTI-AUTOCLICK PROTECTION SYSTEM ──
+  interface ClickRecord {
+    time: number;
+    x: number;
+    y: number;
+  }
+  const clickHistoryRef = useRef<ClickRecord[]>([]);
+  const antiBotLockedUntilRef = useRef<number>(0);
+  const [isAntiBotLocked, setIsAntiBotLocked] = useState<boolean>(false);
+  const [antiBotTimeLeft, setAntiBotTimeLeft] = useState<number>(0);
+
+  // ── HOLD-TO-CHARGE MEGA-BEAM SYSTEM ──
+  const [chargeProgress, setChargeProgress] = useState<number>(0); // 0 to 100
+  const chargeProgressRef = useRef<number>(0);
+  const [isCharging, setIsCharging] = useState<boolean>(false);
+  const [isMegaBeamFiring, setIsMegaBeamFiring] = useState<boolean>(false);
+  const chargeHoldStartRef = useRef<number | null>(null);
+  const chargeHoldPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const chargeActiveRef = useRef<boolean>(false);
+
   const lastAnomalySpawnTimeRef = useRef<number>(performance.now() - 13000);
   const nextAnomalyDelayRef = useRef<number>(16000);
 
   const [systemLog, setSystemLog] = useState<string>(
-    'Trạm Phản Ứng Lượng Tử đã kích hoạt. Hãy nhấp chuột vào Lõi để bắt đầu khai thác Joules!'
+    'Trạm Phản Ứng Lượng Tử đã kích hoạt. Nhấp chuột hoặc Giữ sạc tia Mega-Beam để khai thác Joules!'
   );
 
   const stateRef = useRef<GameState>(gameState);
   stateRef.current = gameState;
+
+  // Thuật toán phát hiện Auto-clicker / Macro Bot
+  const checkAntiAutoclick = useCallback((clientX: number, clientY: number, now: number): boolean => {
+    if (now < antiBotLockedUntilRef.current) return true;
+
+    // Lọc click trong 1200ms gần nhất
+    const history = clickHistoryRef.current.filter(c => now - c.time <= 1200);
+    history.push({ time: now, x: clientX, y: clientY });
+    clickHistoryRef.current = history;
+
+    let isBotDetected = false;
+    let botReason = '';
+
+    // 1. Tần số bất khả thi (Rate limit > 16 clicks/giây)
+    if (history.length >= 17) {
+      isBotDetected = true;
+      botReason = `Tần số nhấp vượt ngưỡng con người (${history.length} CPS)`;
+    }
+    // 2. Robot Uniformity (Khoảng cách thời gian đều đặn bất thường, sigma < 3.2ms)
+    else if (history.length >= 7) {
+      const recent = history.slice(-7);
+      const intervals: number[] = [];
+      for (let i = 1; i < recent.length; i++) {
+        intervals.push(recent[i].time - recent[i - 1].time);
+      }
+      const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+      const variance = intervals.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / intervals.length;
+      const stdDev = Math.sqrt(variance);
+
+      if (avg < 90 && stdDev < 3.2) {
+        isBotDetected = true;
+        botReason = `Nhịp click đều đặn bất thường (độ lệch chuẩn ${stdDev.toFixed(2)}ms)`;
+      }
+    }
+    // 3. Synthetic Pixel Coordinates (Trùng tọa độ tuyệt đối liên tục ở tốc độ cao)
+    if (!isBotDetected && history.length >= 8) {
+      const recent = history.slice(-8);
+      const first = recent[0];
+      const allSameCoord = recent.every(
+        c => Math.abs(c.x - first.x) < 0.5 && Math.abs(c.y - first.y) < 0.5
+      );
+      const intervals: number[] = [];
+      for (let i = 1; i < recent.length; i++) {
+        intervals.push(recent[i].time - recent[i - 1].time);
+      }
+      const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+
+      if (allSameCoord && avg < 80) {
+        isBotDetected = true;
+        botReason = 'Tọa độ click trùng khớp tuyệt đối ở tần số cao';
+      }
+    }
+
+    if (isBotDetected) {
+      antiBotLockedUntilRef.current = now + 3500;
+      setIsAntiBotLocked(true);
+      setAntiBotTimeLeft(3.5);
+      chargeHoldStartRef.current = null;
+      chargeActiveRef.current = false;
+      setIsCharging(false);
+      setChargeProgress(0);
+      chargeProgressRef.current = 0;
+
+      soundSynth.stopChargeHum();
+      soundSynth.playAntiAutoclick();
+      canvasRef.current?.emitClick(clientX, clientY, '⚠️ NGẮT MẠCH ANTI-AUTOCLICK!', true, false, '#f43f5e');
+      setSystemLog(`⚠️ BẢO MẬT HỆ THỐNG: ${botReason}! Khóa ngắt mạch Lõi trong 3.5 giây để bảo vệ tụ điện!`);
+      return true;
+    }
+
+    return false;
+  }, [canvasRef]);
 
   // Auto-save to LocalStorage
   useEffect(() => {
@@ -97,8 +189,82 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
       const delta = Math.min((now - lastTime) / 1000, 0.25);
       lastTime = now;
 
+      // Cập nhật trạng thái Anti-Autoclick Lockout
+      if (antiBotLockedUntilRef.current > now) {
+        setIsAntiBotLocked(true);
+        setAntiBotTimeLeft(Math.max(0, (antiBotLockedUntilRef.current - now) / 1000));
+      } else if (antiBotLockedUntilRef.current > 0) {
+        antiBotLockedUntilRef.current = 0;
+        setIsAntiBotLocked(false);
+        setAntiBotTimeLeft(0);
+      }
+
+      // Cập nhật tiến trình Sạc tụ (Hold-to-Charge)
+      if (chargeHoldStartRef.current !== null && antiBotLockedUntilRef.current <= now) {
+        const holdDuration = now - chargeHoldStartRef.current;
+        if (holdDuration >= 180) {
+          if (!chargeActiveRef.current) {
+            chargeActiveRef.current = true;
+            setIsCharging(true);
+            soundSynth.startChargeHum();
+          }
+          // Sạc từ 180ms đến 1500ms (1320ms để đạt 100%)
+          const progress = Math.min(100, ((holdDuration - 180) / 1320) * 100);
+          chargeProgressRef.current = progress;
+          setChargeProgress(progress);
+
+          // Xử lý nổ tụ đoản mạch do sạc quá thời gian (> 1750ms)
+          if (holdDuration >= 1750) {
+            const pos = { ...chargeHoldPosRef.current };
+            chargeHoldStartRef.current = null;
+            chargeActiveRef.current = false;
+            setIsCharging(false);
+            setChargeProgress(0);
+            chargeProgressRef.current = 0;
+            soundSynth.stopChargeHum();
+            soundSynth.playOverchargeFault();
+            canvasRef.current?.triggerScreenShake(10);
+            canvasRef.current?.emitClick(pos.x, pos.y, '⚡ ĐOẢN MẠCH SẠC! +22% NHIỆT', true, false, '#f43f5e');
+
+            setGameState(prev => {
+              const nextHeat = prev.cryoFreezeRemaining > 0 ? 0 : Math.min(100, prev.heat + 22);
+              if (nextHeat >= 100 && prev.cryoFreezeRemaining <= 0 && !prev.isOverdrive) {
+                soundSynth.playMeltdown();
+                canvasRef.current?.emitMeltdown(pos.x, pos.y);
+                const nextMeltdownCount = (prev.meltdownCount || 0) + 1;
+                const phaseScale = Math.pow(3.0, prev.currentPhase - 1);
+                const basePenalty = Math.round((320 + nextMeltdownCount * 280) * phaseScale);
+                const walletDamage = prev.joules > 0 ? Math.round(prev.joules * 0.85) : 0;
+                const totalPenalty = basePenalty + walletDamage;
+                const resultingJoules = prev.joules - totalPenalty;
+                setSystemLog(`💥 ĐOẢN MẠCH GÂY NỔ 100%! Lõi sụp đổ về Phase 1! Phạt ${formatJoules(totalPenalty)}!`);
+                return {
+                  ...prev,
+                  heat: 0,
+                  currentPhase: 1,
+                  totalJoulesEarned: 0,
+                  hasWon: false,
+                  isOverdrive: false,
+                  overdriveTimeRemaining: 0,
+                  meltdownCount: nextMeltdownCount,
+                  lastMeltdownPenalty: totalPenalty,
+                  joules: resultingJoules,
+                  totalClicks: prev.totalClicks + 1
+                };
+              }
+              return {
+                ...prev,
+                heat: nextHeat,
+                totalClicks: prev.totalClicks + 1
+              };
+            });
+            setSystemLog('⚡ ĐOẢN MẠCH SẠC TỤ! Giữ quá lâu làm phóng điện nội bộ, nhiệt độ tăng vọt +22%!');
+          }
+        }
+      }
+
       // Reset combo if player paused clicking for > 1.8 seconds
-      if (now - lastClickTimeRef.current > 1800 && comboCount > 0) {
+      if (now - lastClickTimeRef.current > 1800 && comboCountRef.current > 0) {
         setComboCount(0);
       }
 
@@ -521,11 +687,190 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
     }
   }, []);
 
+  // Pointer Down trên Core (bắt đầu tính click / sạc tụ)
+  const handleCorePointerDown = useCallback(
+    (clientX: number, clientY: number) => {
+      const now = performance.now();
+      if (now < antiBotLockedUntilRef.current) return;
+      if (checkAntiAutoclick(clientX, clientY, now)) return;
+
+      soundSynth.startAmbient();
+      retroBGM.start();
+
+      chargeHoldStartRef.current = now;
+      chargeHoldPosRef.current = { x: clientX, y: clientY };
+      chargeActiveRef.current = false;
+    },
+    [checkAntiAutoclick]
+  );
+
+  // Pointer Up trên Core (xác định Click thường hay Bắn Mega-Beam)
+  const handleCorePointerUp = useCallback(
+    (clientX: number, clientY: number) => {
+      const now = performance.now();
+      if (now < antiBotLockedUntilRef.current) return;
+
+      const start = chargeHoldStartRef.current;
+      if (start === null) return;
+
+      const holdDuration = now - start;
+      const wasCharging = chargeActiveRef.current;
+      const progress = chargeProgressRef.current;
+
+      // Dọn dẹp trạng thái giữ chuột
+      chargeHoldStartRef.current = null;
+      chargeActiveRef.current = false;
+      setIsCharging(false);
+      setChargeProgress(0);
+      chargeProgressRef.current = 0;
+      soundSynth.stopChargeHum();
+
+      // Trường hợp 1: Nhấp chuột nhanh (< 180ms) -> Thực hiện Click tay thông thường
+      if (!wasCharging && holdDuration < 180) {
+        handleCoreClick(clientX, clientY);
+        return;
+      }
+
+      // Trường hợp 2: Đã vào trạng thái Sạc Tụ (Hold-to-Charge)
+      const state = stateRef.current;
+      const baseJPC = calculateJPC(state.upgrades, state.isOverdrive);
+      const critStats = calculateCritStats(state.upgrades);
+      const frenzyMult = state.frenzyRemaining > 0 ? 5 : 1;
+      const comboMult = 1 + comboCountRef.current * 0.08;
+
+      // 2A. SWEETSPOT (75% - 92%): BẮN MEGA-BEAM X10!
+      if (progress >= 75 && progress <= 92) {
+        soundSynth.playMegaBeamFire();
+        canvasRef.current?.triggerScreenShake(14);
+
+        const megaMultiplier = 10.0 * critStats.multiplier * comboMult * frenzyMult;
+        const earned = Math.round(baseJPC * megaMultiplier);
+
+        setIsMegaBeamFiring(true);
+        setTimeout(() => setIsMegaBeamFiring(false), 450);
+
+        canvasRef.current?.emitClick(
+          clientX,
+          clientY,
+          `💥 MEGA-BEAM x10! +${formatJoules(earned)}`,
+          true,
+          true,
+          '#00f0ff'
+        );
+
+        setGameState(prev => {
+          const wasInDebt = prev.joules < 0;
+          const newJoules = prev.joules + earned;
+          const addedToTotal = wasInDebt ? (newJoules > 0 ? newJoules : 0) : earned;
+          const nextHeat = Math.max(0, prev.heat - 15); // Giảm nhiệt 15%
+
+          if (wasInDebt && newJoules >= 0) {
+            soundSynth.playDebtCleared();
+            setSystemLog('✨ TUYỆT VỜI! Mega-Beam đã thổi bay sạch nợ năng lượng! Trạm mở khóa hoàn toàn!');
+          }
+
+          return {
+            ...prev,
+            joules: newJoules,
+            totalJoulesEarned: prev.totalJoulesEarned + addedToTotal,
+            totalClicks: prev.totalClicks + 1,
+            heat: nextHeat
+          };
+        });
+
+        setSystemLog(`⚡ PHÓNG CHÙM TIA MEGA-BEAM THÀNH CÔNG! Năng lượng x10 (+${formatJoules(earned)} J), giải nhiệt hạ -15%!`);
+        return;
+      }
+
+      // 2B. NHẢ NON (< 75%): XẢ XUNG ÁP THẤP
+      if (progress < 75) {
+        const ratio = Math.max(0.2, progress / 75);
+        const earned = Math.round(baseJPC * (1 + ratio * 1.5) * frenzyMult);
+
+        soundSynth.playClick(1.3);
+        canvasRef.current?.emitClick(
+          clientX,
+          clientY,
+          `XẢ XUNG +${formatJoules(earned)}`,
+          false,
+          false,
+          '#38bdf8'
+        );
+
+        setGameState(prev => {
+          const wasInDebt = prev.joules < 0;
+          const newJoules = prev.joules + earned;
+          const addedToTotal = wasInDebt ? (newJoules > 0 ? newJoules : 0) : earned;
+          const nextHeat = prev.cryoFreezeRemaining > 0 ? 0 : Math.min(100, prev.heat + 3);
+
+          return {
+            ...prev,
+            joules: newJoules,
+            totalJoulesEarned: prev.totalJoulesEarned + addedToTotal,
+            totalClicks: prev.totalClicks + 1,
+            heat: nextHeat
+          };
+        });
+
+        setSystemLog(`Xả xung áp non (${Math.round(progress)}%): Thu được +${formatJoules(earned)} Joules.`);
+        return;
+      }
+
+      // 2C. NHẢ TRỄ (> 92% nhưng chưa quá 100%): XUNG ÁP QUÁ TẢI
+      if (progress > 92) {
+        const earned = Math.round(baseJPC * 3.5 * frenzyMult);
+
+        soundSynth.playClick(0.6);
+        canvasRef.current?.triggerScreenShake(6);
+        canvasRef.current?.emitClick(
+          clientX,
+          clientY,
+          `XUNG ÁP TRỄ +${formatJoules(earned)} (+10% NHIỆT)`,
+          false,
+          false,
+          '#fbbf24'
+        );
+
+        setGameState(prev => {
+          const wasInDebt = prev.joules < 0;
+          const newJoules = prev.joules + earned;
+          const addedToTotal = wasInDebt ? (newJoules > 0 ? newJoules : 0) : earned;
+          const nextHeat = prev.cryoFreezeRemaining > 0 ? 0 : Math.min(100, prev.heat + 10);
+
+          return {
+            ...prev,
+            joules: newJoules,
+            totalJoulesEarned: prev.totalJoulesEarned + addedToTotal,
+            totalClicks: prev.totalClicks + 1,
+            heat: nextHeat
+          };
+        });
+
+        setSystemLog(`Xung áp quá ngưỡng (${Math.round(progress)}%): Thu được +${formatJoules(earned)} Joules nhưng nhiệt tăng +10%!`);
+      }
+    },
+    [canvasRef, handleCoreClick]
+  );
+
+  const handleCorePointerLeave = useCallback(() => {
+    if (chargeHoldStartRef.current !== null) {
+      handleCorePointerUp(chargeHoldPosRef.current.x, chargeHoldPosRef.current.y);
+    }
+  }, [handleCorePointerUp]);
+
   return {
     gameState,
     comboCount,
     systemLog,
+    isAntiBotLocked,
+    antiBotTimeLeft,
+    chargeProgress,
+    isCharging,
+    isMegaBeamFiring,
     handleCoreClick,
+    handleCorePointerDown,
+    handleCorePointerUp,
+    handleCorePointerLeave,
     handleCryoVent,
     handleAnomalyClick,
     buyUpgrade,

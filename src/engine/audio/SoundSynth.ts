@@ -401,6 +401,126 @@ class SoundSynthEngine {
       osc.stop(t + 0.5);
     }
   }
+
+  private chargeOsc: OscillatorNode | null = null;
+  private chargeGain: GainNode | null = null;
+
+  // Bắt đầu tiếng rền tụ điện khi ấn giữ sạc
+  public startChargeHum() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+    this.stopChargeHum();
+
+    try {
+      const t = this.ctx.currentTime;
+      this.chargeOsc = this.ctx.createOscillator();
+      this.chargeGain = this.ctx.createGain();
+      this.chargeOsc.type = 'sawtooth';
+      this.chargeOsc.frequency.setValueAtTime(140, t);
+      this.chargeOsc.frequency.linearRampToValueAtTime(750, t + 1.6);
+      this.chargeGain.gain.setValueAtTime(0.02, t);
+      this.chargeGain.gain.linearRampToValueAtTime(0.18, t + 1.4);
+      this.chargeOsc.connect(this.chargeGain);
+      this.chargeGain.connect(this.ctx.destination);
+      this.chargeOsc.start(t);
+    } catch {
+      // ignore
+    }
+  }
+
+  // Dừng tiếng tụ điện
+  public stopChargeHum() {
+    if (this.chargeOsc) {
+      try {
+        this.chargeOsc.stop();
+        this.chargeOsc.disconnect();
+      } catch {
+        // ignore
+      }
+      this.chargeOsc = null;
+      this.chargeGain = null;
+    }
+  }
+
+  // Tiếng phóng chùm Mega Beam cực đại
+  public playMegaBeamFire() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    this.stopChargeHum();
+    const t = this.ctx.currentTime;
+
+    // Sub-bass heavy laser impact
+    const subOsc = this.ctx.createOscillator();
+    const subGain = this.ctx.createGain();
+    subOsc.type = 'sine';
+    subOsc.frequency.setValueAtTime(160, t);
+    subOsc.frequency.exponentialRampToValueAtTime(35, t + 0.6);
+    subGain.gain.setValueAtTime(0.4, t);
+    subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.65);
+    subOsc.connect(subGain);
+    subGain.connect(this.ctx.destination);
+    subOsc.start(t);
+    subOsc.stop(t + 0.7);
+
+    // High laser screech
+    const beamOsc = this.ctx.createOscillator();
+    const beamGain = this.ctx.createGain();
+    beamOsc.type = 'triangle';
+    beamOsc.frequency.setValueAtTime(1800, t);
+    beamOsc.frequency.exponentialRampToValueAtTime(400, t + 0.5);
+    beamGain.gain.setValueAtTime(0.3, t);
+    beamGain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+    beamOsc.connect(beamGain);
+    beamGain.connect(this.ctx.destination);
+    beamOsc.start(t);
+    beamOsc.stop(t + 0.6);
+  }
+
+  // Tiếng nổ đoản mạch khi giữ sạc quá đà >100%
+  public playOverchargeFault() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    this.stopChargeHum();
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(220, t);
+    osc.frequency.setValueAtTime(110, t + 0.08);
+    osc.frequency.setValueAtTime(60, t + 0.18);
+    gain.gain.setValueAtTime(0.25, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.4);
+  }
+
+  // Cảnh báo kích hoạt ngắt mạch chống Auto-click
+  public playAntiAutoclick() {
+    if (this.isMuted) return;
+    this.initContext();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(800, t);
+    osc.frequency.setValueAtTime(400, t + 0.1);
+    osc.frequency.setValueAtTime(800, t + 0.2);
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.4);
+  }
 }
 
 export const soundSynth = new SoundSynthEngine();

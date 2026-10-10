@@ -15,7 +15,15 @@ export function App() {
     gameState,
     comboCount,
     systemLog,
+    isAntiBotLocked,
+    antiBotTimeLeft,
+    chargeProgress,
+    isCharging,
+    isMegaBeamFiring,
     handleCoreClick,
+    handleCorePointerDown,
+    handleCorePointerUp,
+    handleCorePointerLeave,
     handleCryoVent,
     handleAnomalyClick,
     buyUpgrade,
@@ -145,7 +153,15 @@ export function App() {
           <ReactorView
             gameState={gameState}
             comboCount={comboCount}
+            isAntiBotLocked={isAntiBotLocked}
+            antiBotTimeLeft={antiBotTimeLeft}
+            chargeProgress={chargeProgress}
+            isCharging={isCharging}
+            isMegaBeamFiring={isMegaBeamFiring}
             onCoreClick={handleCoreClick}
+            onCorePointerDown={handleCorePointerDown}
+            onCorePointerUp={handleCorePointerUp}
+            onCorePointerLeave={handleCorePointerLeave}
             onCryoVent={handleCryoVent}
             onAnomalyClick={handleAnomalyClick}
           />
