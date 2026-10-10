@@ -18,7 +18,10 @@ export const HeaderHUD: React.FC<HeaderHUDProps> = ({ gameState, onToggleMute, o
 
   const prevThreshold = gameState.currentPhase > 1 ? EVOLUTION_PHASES[gameState.currentPhase - 2].threshold : 0;
   const targetThreshold = currentPhaseInfo.threshold;
-  const progressRatio = nextPhaseInfo
+  const isDebt = gameState.joules < 0;
+  const progressRatio = isDebt
+    ? 0
+    : nextPhaseInfo
     ? Math.min(1, Math.max(0, (gameState.totalJoulesEarned - prevThreshold) / (targetThreshold - prevThreshold)))
     : 1.0;
   const progressPercent = Math.floor(progressRatio * 100);
@@ -127,22 +130,28 @@ export const HeaderHUD: React.FC<HeaderHUDProps> = ({ gameState, onToggleMute, o
 
       {/* Progress Bar Row — Full-width milestone tracker */}
       <div className="flex items-center gap-3 px-4 py-1.5 bg-black/80 border-t border-slate-900">
-        <span className="text-[10px] text-slate-500 font-mono whitespace-nowrap tracking-wider uppercase">TIẾN TRÌNH</span>
+        <span className="text-[10px] text-slate-500 font-mono whitespace-nowrap tracking-wider uppercase">
+          {isDebt ? 'TIẾN TRÌNH (KHÓA)' : 'TIẾN TRÌNH'}
+        </span>
         <div className="flex-1 relative h-2 rounded-full bg-slate-900 overflow-hidden">
           <div
-            className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${progressPercent}%`, backgroundColor: currentPhaseInfo.accentHex, boxShadow: `0 0 10px ${currentPhaseInfo.accentHex}` }}
+            className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out ${isDebt ? 'bg-red-500' : ''}`}
+            style={{
+              width: `${isDebt ? 0 : progressPercent}%`,
+              backgroundColor: isDebt ? '#ff2a5f' : currentPhaseInfo.accentHex,
+              boxShadow: isDebt ? 'none' : `0 0 10px ${currentPhaseInfo.accentHex}`
+            }}
           />
           {/* Segment ticks */}
           {[25, 50, 75].map(pct => (
             <div key={pct} className="absolute top-0 bottom-0 w-px bg-slate-800" style={{ left: `${pct}%` }} />
           ))}
         </div>
-        <span className="text-[11px] font-mono font-bold whitespace-nowrap" style={{ color: currentPhaseInfo.accentHex }}>
-          {progressPercent}%
+        <span className="text-[11px] font-mono font-bold whitespace-nowrap" style={{ color: isDebt ? '#ff2a5f' : currentPhaseInfo.accentHex }}>
+          {isDebt ? '0% [NỢ]' : `${progressPercent}%`}
         </span>
-        <span className="text-[10px] text-slate-500 font-mono whitespace-nowrap">
-          → {nextPhaseInfo ? formatJoules(targetThreshold) : 'MAX'}
+        <span className="text-[10px] font-mono whitespace-nowrap" style={{ color: isDebt ? '#ff2a5f' : '#64748b' }}>
+          {isDebt ? '→ TRẢ HẾT NỢ ĐỂ MỞ TIẾN HÓA' : `→ ${nextPhaseInfo ? formatJoules(targetThreshold) : 'MAX'}`}
         </span>
 
         {/* Overdrive indicator */}

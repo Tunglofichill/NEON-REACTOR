@@ -104,7 +104,17 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
           const earned = jps * delta;
           const wasInDebt = state.joules < 0;
           state.joules += earned;
-          state.totalJoulesEarned += earned;
+          
+          // Chỉ tích lũy năng lượng tiến hóa khi đã sạch nợ
+          let addedToTotal = 0;
+          if (wasInDebt) {
+            if (state.joules > 0) {
+              addedToTotal = state.joules;
+            }
+          } else {
+            addedToTotal = earned;
+          }
+          state.totalJoulesEarned += addedToTotal;
           stateChanged = true;
 
           // Nếu Drone cày trả hết sạch nợ
@@ -139,9 +149,9 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
           state.speedrunSeconds += delta;
         }
 
-        // 5. Check Phase Evolutions
+        // 5. Check Phase Evolutions (TUYỆT ĐỐI KHÔNG LÊN CẤP KHI ĐANG NỢ - PHẢI SẠCH NỢ VÍ >= 0)
         const currentThreshold = EVOLUTION_PHASES[state.currentPhase - 1]?.threshold || 1000;
-        if (state.currentPhase < 5 && state.totalJoulesEarned >= currentThreshold) {
+        if (state.joules >= 0 && state.currentPhase < 5 && state.totalJoulesEarned >= currentThreshold) {
           state.currentPhase += 1;
           stateChanged = true;
           const newPhase = EVOLUTION_PHASES[state.currentPhase - 1];
@@ -271,6 +281,16 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
         const wasInDebt = prev.joules < 0;
         const newJoules = prev.joules + earned;
 
+        // Chỉ tích lũy năng lượng tiến hóa vào totalJoulesEarned khi đã sạch nợ
+        let addedToTotal = 0;
+        if (wasInDebt) {
+          if (newJoules > 0) {
+            addedToTotal = newJoules; // Phần thặng dư vượt mốc 0
+          }
+        } else {
+          addedToTotal = earned;
+        }
+
         if (wasInDebt && newJoules >= 0) {
           soundSynth.playDebtCleared();
           setSystemLog('✨ TUYỆT VỜI! Đã cày trả hết sạch nợ năng lượng! Lõi trở lại trạng thái danh định!');
@@ -284,7 +304,7 @@ export function useIdleGame(canvasRef: React.RefObject<ParticleCanvasHandle>) {
         return {
           ...prev,
           joules: newJoules,
-          totalJoulesEarned: prev.totalJoulesEarned + earned,
+          totalJoulesEarned: prev.totalJoulesEarned + addedToTotal,
           totalClicks: prev.totalClicks + 1,
           heat: nextHeat
         };
