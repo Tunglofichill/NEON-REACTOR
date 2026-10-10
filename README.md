@@ -1,7 +1,15 @@
 # ⚡ NEON REACTOR: QUANTUM OVERDRIVE
 
-> **Dự án dự thi Game Sprint 2026**  
-> **Đơn vị phát triển:** [Pawfolio Studio](https://pawfoliostudio.vercel.app/) ✨
+> **Dự án dự thi:** Game Sprint 2026  
+> **Tên đội thi (Team Name):** **Seki and Kiva**  
+> **Studio trực thuộc:** [Pawfolio Studio](https://pawfoliostudio.vercel.app/) ✨
+
+---
+
+## 👥 THÀNH VIÊN ĐỘI THI (TEAM MEMBERS)
+
+- **Seki (Lead Developer & Game Designer):** Chủ nhiệm dự án, thiết kế kiến trúc game loop, balance kinh tế năng lượng Joules và gameplay mechanics.
+- **Kiva (AI Co-Pilot & Technical Assistant):** Trợ lý AI đồng hành, tối ưu hóa thuật toán render Canvas 60 FPS, âm thanh Procedural Web Audio API và hỗ trợ kỹ thuật trực tiếp.
 
 ---
 
@@ -79,7 +87,8 @@ Dự án được tối ưu hóa 100% sẵn sàng deploy chỉ với 1 click tr�
 
 ---
 
-## ✨ 6. CREDIT & BẢN QUYỀN
+## ✨ 6. ĐỘI THI & BẢN QUYỀN (CREDITS)
 
-Thiết kế và phát triển bởi **[Pawfolio Studio](https://pawfoliostudio.vercel.app/)**.  
-Tất cả quyền được bảo lưu © 2026.
+- **Tên đội thi:** **Seki and Kiva**
+- **Studio trực thuộc:** [Pawfolio Studio](https://pawfoliostudio.vercel.app/) ✨  
+- **Bản quyền:** © 2026 Seki & Kiva (Pawfolio Studio). All rights reserved.
